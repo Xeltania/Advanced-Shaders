@@ -1,0 +1,80 @@
+// first step of tesselation shader
+// tesselation control shader add/deletes control points and determines the tesselatation level
+// patch has three control points here (three vertices for each triangle)
+
+
+#version 450 core
+layout (vertices =3) out;
+
+
+// vectors stored as arrays - each patch has three vertices, each with an xyz pos and xyz norm value 
+//posVS = position from Vertex Shader, posTC = position from this Tesselation Control shader
+
+in vec3 fragPosVS[] ;
+//in vec3 normals[] ; 
+in vec2 TexCoords[];
+
+uniform vec3 camPos;
+
+out vec3 posTC[] ;
+//out vec3 normTC[] ;
+out vec2 TexCoordsTC[];
+
+
+float GetTessLevel(float dist0, float dist1)
+{
+
+	float averageDist = (dist0 + dist1) / 2.0;
+	
+	/*
+	// heuristic
+	
+		// stepped distances
+	if(averageDist < 50)
+		return 15;
+	else if (averageDist < 100)
+		return 10;
+	else if (averageDist < 150)
+		return 5;
+	else
+		return 1 ;
+	*/
+	
+	// exponential 
+	float tessLv = (exp(- 0.01 * averageDist)) * 100;
+
+	if (tessLv > 1)
+		return tessLv;
+	else 
+		return 1;
+}
+
+void main()
+{
+  // tesselation level; we wil find this automatically later but for now hardcoded value
+	// calculate euclidian distance from camera to the vertex
+   float eyeToVertDist0 = distance(camPos, fragPosVS[0]);
+   float eyeToVertDist1 = distance(camPos, fragPosVS[1]);
+   float eyeToVertDist2 = distance(camPos, fragPosVS[2]);
+   
+
+   // gpu can calculate each control point in parallel
+   // tesselation level same for entire patch so only need to set it once (for the first control point)
+   // gl_invocation called for each control point
+   if (gl_InvocationID==0)
+   {
+		   // Calculate the tessellation levels
+          gl_TessLevelOuter[0] = GetTessLevel(eyeToVertDist1, eyeToVertDist2) ; 
+          gl_TessLevelOuter[1] = GetTessLevel(eyeToVertDist2, eyeToVertDist0) ; 
+          gl_TessLevelOuter[2] = GetTessLevel(eyeToVertDist0, eyeToVertDist1) ;
+          gl_TessLevelInner[0] = gl_TessLevelOuter[2] ; 
+
+   }
+
+   // pass through position and normal information
+   posTC[gl_InvocationID]  = fragPosVS[gl_InvocationID] ;
+   //normTC[gl_InvocationID] = normals[gl_InvocationID] ;
+   TexCoordsTC[gl_InvocationID] = TexCoords[gl_InvocationID];
+
+}
+

@@ -1,0 +1,145 @@
+#version 450 core
+
+// reading in a triangle, split tesselated triangels evenly in a counter-clockwise direction (ccw)
+layout(triangles, equal_spacing, ccw) in;
+
+// forward declare functions to perfrom interpolation with the barycentric coordinates from the Primitive Generator
+vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2) ;
+vec3 interpolate3D(vec3 v0, vec3 v1, vec3 v2) ;
+
+
+// unifrom matrices to perform transformations
+// previously this would have been done in vertex shader
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+// height map
+uniform sampler2D heightMap;
+uniform float scale;
+// Perlin Noise
+uniform int octaves;
+//Fog
+uniform vec3 camPos;
+
+// read in vector arrays from previous shader
+in vec3 posTC[] ;
+in vec2 TexCoordsTC[];
+
+// pass along the interpolated values
+out vec3 normES;
+out vec3 posES ;
+out vec2 TexCoordsTE;
+out float vis;
+
+// Forward declare functions
+float noise(vec3 pos, int octaves);
+
+uniform int gridSize;
+
+void main()
+{
+
+	float triSize = gridSize /  gl_TessLevelInner[0];
+	
+    // interpolate the normal and xyz position using the linear interpolation function
+    // use 3D because they are in three dimensions; 2D also included for uv texture coordinates
+
+   //normES = interpolate3D(normTC[0], normTC[1], normTC[2]) ;
+   
+   posES = interpolate3D(posTC[0], posTC[1], posTC[2]) ;
+   
+   TexCoordsTE = interpolate2D(TexCoordsTC[0], TexCoordsTC[1], TexCoordsTC[2]);
+   float height = (texture(heightMap, TexCoordsTE).r);
+   
+   // Old pos to pass to Frag Shader, now using noise.
+	//posES.y = height * scale;
+
+
+	// Calculate CDM
+   
+      	// Frag Pos
+
+   float right = noise(posES + vec3(triSize, 0, 0), octaves) * scale;
+   float left = noise(posES + vec3(-triSize, 0, 0), octaves) * scale;
+   float up = noise(posES + vec3(0, 0, triSize), octaves) * scale;
+   float down = noise(posES + vec3(0, 0, -triSize), octaves) * scale;
+   
+   float lr = left - right;
+   float du = down - up;
+   
+   
+   //rightHeight = noise(right, octaves)
+   //
+   //float right = (textureOffset(heightMap, TexCoordsTE, ivec2(1,0)).r)* scale;
+   //float left = (textureOffset(heightMap, TexCoordsTE, ivec2(-1,0)).r)* scale;
+   //float up = (textureOffset(heightMap, TexCoordsTE, ivec2(0,1)).r)* scale;
+   //float down = (textureOffset(heightMap, TexCoordsTE, ivec2(0,-1)).r)* scale;
+   //float lr = left - right;
+   //float du = down - up;
+   
+   // Frag Normals
+   normES = normalize(vec3(lr, 2.0, du));
+   
+   	// Frag Pos
+   posES.y = noise(posES, octaves) ;
+
+   
+   // transform vertex to clip space  - NOTE: WE NEED TO DO IT HERE NOW and not in vertex shader
+   gl_Position = projection * view * vec4(posES, 1.0);
+   
+   	// Fog -> pass this to frag shader
+	float distFromCam = distance(camPos, posES);
+	vis = exp(-pow((distFromCam * 0.005), 1.2));
+	vis = clamp(vis, 0.0, 1.0);
+   
+} 
+
+
+//basic linear interpolation
+vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2)
+{
+   	return vec2(gl_TessCoord.x) * v0 + vec2(gl_TessCoord.y) * v1 + vec2(gl_TessCoord.z) * v2;
+}
+
+vec3 interpolate3D(vec3 v0, vec3 v1, vec3 v2)
+{
+   	return vec3(gl_TessCoord.x) * v0 + vec3(gl_TessCoord.y) * v1 + vec3(gl_TessCoord.z) * v2;
+}
+
+
+// Noise Functions
+
+float hash(float n) {
+    return fract(sin(n) * 753.5453123);
+}
+
+float snoise(vec3 x)
+{
+	vec3 p = floor(x);
+	vec3 f = fract(x);
+	f = f * f * (3.0f - (2.0f * f));
+
+	float n = p.x + p.y * 157.0f + 113.0f * p.z;
+	return mix(mix(mix(hash(n + 0.0f), hash(n + 1.0f), f.x),
+		mix(hash(n + 157.0f), hash(n + 158.0f), f.x), f.y),
+		mix(mix(hash(n + 113.0f), hash(n + 114.0f), f.x),
+			mix(hash(n + 270.0f), hash(n + 271.0f), f.x), f.y), f.z);
+}
+
+float noise(vec3 pos, int octaves)
+{
+	float total = 0.f;
+	float freq = 0.01;
+	float maxAmplitude = 0.f;
+	float amplitude = 50.f;
+	for (int i = 0 ; i < octaves ; i ++)
+	{
+		total += snoise(pos * freq) * amplitude;
+		freq *= 2.0f;
+		amplitude /= 2.0f;
+		maxAmplitude += amplitude;
+	}
+	
+	return(total / maxAmplitude) * scale;
+}
+
