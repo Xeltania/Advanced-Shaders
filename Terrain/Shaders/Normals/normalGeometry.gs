@@ -27,11 +27,11 @@ void main()
 	for(int i =0; i < 3; i++)
 	{
 		gNormals = normES[i];
-		gWorldPos_FS_in =  posES[i];
+		gWorldPos_FS_in = posES[i];
 		//
-		gl_Position = projection * view  vec4(gWorldPos_FS_in, 1.0);
+		gl_Position = projection * view * vec4(gWorldPos_FS_in, 1.0);
 		EmitVertex();
-		gl_Position = projection * view * (vec4(gWorldPos_FS_in, 1.0) + vec4(gWorldPos_FS_in * length, 0.0)); 
+		gl_Position = projection * view * (vec4(gWorldPos_FS_in, 1.0) + vec4(gNormals * length, 0.0)); 
 		EmitVertex();
 		EndPrimitive();
 	}

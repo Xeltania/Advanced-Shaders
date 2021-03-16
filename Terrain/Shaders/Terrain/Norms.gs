@@ -21,7 +21,7 @@ void main()
    {
       gl_Position = projection * view * vec4(posES[i], 1.0) ;
       gWorldPos_FS_in = posES[i];
-      gNormals = normES[i];    
+      gNormals = getNormal();// normES[i];    
       EmitVertex() ;
 	  
   }
