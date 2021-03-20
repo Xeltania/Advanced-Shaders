@@ -45,6 +45,16 @@ unsigned int terrainVAO;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+// Booleans to toggle features [ use key presses to swap these ]
+	// Debugging Shader Toggles //
+bool showNormals = false; // Bind to the 1 key
+bool shadeNormals = false; // Bind to Tab key
+	// 
+bool usePerlin = false; // Bind to 2 key : need to toggle between how cdm is calculated in TES
+bool useCDM = false; // Swap between the getNormal() and CDM calculated normals
+
+
+
 int main()
 {
 	glfwInit();
@@ -88,9 +98,9 @@ int main()
 	terrainVAO = terrain.getVAO();
 
 	// Clear Colour
-	const float clearR = 0.3f;
-	const float clearG = 0.3f;
-	const float clearB = 0.5f;
+	const float clearR = 0.40f;
+	const float clearG = 0.40f;
+	const float clearB = 0.80f;
 
 
 	while (!glfwWindowShouldClose(window))
@@ -102,7 +112,7 @@ int main()
 		processInput(window);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(1,1,1, 1.0);
+		glClearColor(clearR, clearG, clearB, 1.0f);
 		
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1200.0f);
 		glm::mat4 view = camera.GetViewMatrix();
@@ -115,6 +125,7 @@ int main()
 		terrainShader.setInt("heightMap", 0);
 		terrainShader.setFloat("scale", 90);
 		terrainShader.setInt("octaves", 50);
+		terrainShader.setInt("gridSize", gridSize);
 		// Lighting
 		GLint lightPos, ambient, diffuse, specular;
 
@@ -147,6 +158,8 @@ int main()
 
 		glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 
+
+		// Normals Shader
 		drawNormal.use();
 		drawNormal.setMat4("projection", projection);
 		drawNormal.setMat4("view", view);
@@ -155,11 +168,15 @@ int main()
 		drawNormal.setInt("heightMap", 0);
 		drawNormal.setFloat("scale", 90);
 		drawNormal.setInt("octaves", 50);
-		// Draw Normal
-		drawNormal.setFloat("length", 1.f);
-		drawNormal.setInt("gridSize", gridSize);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glDrawArrays(GL_PATCHES, 0, terrain.getSize());
+		//
+		if (showNormals)
+		{
+			// Draw Normal
+			drawNormal.setFloat("length", 1.f);
+			drawNormal.setInt("gridSize", gridSize);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
+		}
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -186,6 +203,13 @@ void processInput(GLFWwindow *window)
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
+	// Visual Keys
+	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+		showNormals = !showNormals; // Swap to normal debugging shader visible
+	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+		usePerlin = !usePerlin; // Swap to perlin/height mapped
+	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		useCDM = !useCDM; // Swap to getNormal/CDM
 
 }
 

@@ -5,10 +5,11 @@ vec3 getNormal() ;
 
 in vec3 posES[] ; 
 in vec3 normES[] ;
-
+in float vis[] ;
 
 out vec3 gNormals ;
 out vec3 gWorldPos_FS_in ;
+out float fog ;
 
 uniform mat4 view;
 uniform mat4 projection;
@@ -17,11 +18,13 @@ uniform mat4 projection;
 void main()
 {
   
+  fog = vis[0];
+  
    for(int i = 0 ; i < 3; i++)
    {
       gl_Position = projection * view * vec4(posES[i], 1.0) ;
       gWorldPos_FS_in = posES[i];
-      gNormals = getNormal();// normES[i];    
+      gNormals = normES[i];    
       EmitVertex() ;
 	  
   }

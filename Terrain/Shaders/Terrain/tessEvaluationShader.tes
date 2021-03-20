@@ -65,7 +65,7 @@ void main()
    float down = noise(posES + vec3(0, 0, -triSize), octaves) * scale;
    
    float lr = left - right;
-   float du = down - up;
+   float du = up - down;
    
    
    //rightHeight = noise(right, octaves)

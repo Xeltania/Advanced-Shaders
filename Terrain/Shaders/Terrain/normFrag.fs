@@ -22,7 +22,7 @@ in vec3 gWorldPos_FS_in; // Normal
 in vec3 gNormals; // geo shader normals
 in vec2 TexCoordsTE; // Texture coordinates
 in vec3 posES; // Fragment position
-in float vis ; // Fog Visibility
+in float fog ; // Fog Visibility
 
 uniform vec3 camPos; // View Position
 uniform float scale;
@@ -76,7 +76,7 @@ void main()
 	vec3 ambient = colour * light.ambient; //* vec3(texture(texture_diffuse1, TexCoordsTE));
 	
 	// Diffuse
-	float diff = max(dot(normal, lightDir),0.0);
+	float diff = max(0.0, dot(normal, lightDir));
 	vec3 diffuse = (diff *colour) * light.diffuse; //* vec3(texture(texture_diffuse1, TexCoordsTE));
 	
 	// Light values for specular
@@ -94,9 +94,9 @@ void main()
 	// Regular FragCol
 	vec3 blinnPhong = (ambient + diffuse + specular);
 
-	FragColor = vec4( blinnPhong,1.0);
+	FragColor = vec4( blinnPhong ,1.0);
 	// Mix Fog visibility
-	//FragColor = mix(vec4(sky, 1.0), FragColor, vis);
+	FragColor = mix(vec4(sky, 1.0), FragColor, fog);
 
 }
 
