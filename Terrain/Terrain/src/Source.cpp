@@ -22,15 +22,15 @@
 // settings
 const unsigned int SCR_WIDTH = 1200;
 const unsigned int SCR_HEIGHT = 900;
-	// Large shadow texture : cascaded shadow maps can fix this ( the smaller this is the lower res the shadows become, leaving artifacts )
+// Large shadow texture : cascaded shadow maps can fix this ( the smaller this is the lower res the shadows become, leaving artifacts )
 const unsigned int SHADOW_W = 5120;
 const unsigned int SHADOW_H = 5120;
-	// Directional Light 
+// Directional Light 
 glm::vec3 dirLightPos(0.1f, 1.0f, 0.2);
-	// Buffer textures
+// Buffer textures
 unsigned int textureColourBuffer;
 unsigned int textureDepthBuffer;
-	//arrays
+//arrays
 unsigned int terrainVAO, terrainVBO;
 unsigned int quadVAO, quadVBO;
 unsigned int FBO;
@@ -52,7 +52,7 @@ void renderScene(Shader shader, Shader mS, Model m);
 void renderTrees(Shader modelShader, Model m);
 //
 // camera
-Camera camera(glm::vec3(260,100,300));
+Camera camera(glm::vec3(260, 100, 300));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -68,7 +68,7 @@ bool shadeNormals = false; // Bind to Tab key
 	// 
 bool usePerlin = false; // Bind to 2 key : need to toggle between how cdm is calculated in TES
 bool useCDM = false; // Swap between the getNormal() and CDM calculated normals
-bool useFog = false; 
+bool useFog = false;
 
 
 int main()
@@ -105,6 +105,8 @@ int main()
 	// simple vertex and fragment shader - add your own tess and geo shader
 	Shader terrainShader("..\\shaders\\Terrain\\plainVert.vs", "..\\shaders\\Terrain\\normFrag.fs", "..\\shaders\\Terrain\\Norms.gs", "..\\shaders\\Terrain\\tessControlShader.tcs", "..\\shaders\\Terrain\\tessEvaluationShader.tes");
 	Shader drawNormal("..\\shaders\\Normals\\plainVert.vs", "..\\shaders\\Normals\\plainFrag.fs", "..\\shaders\\Normals\\normalGeometry.gs", "..\\shaders\\Normals\\tessControlShader.tcs", "..\\shaders\\Normals\\tessEvaluationShader.tes");
+	Shader postProcessor("..\\shaders\\Post Processing\\plainVert.vs", "..\\shaders\\Post Processing\\plainFrag.fs", 0, 0, 0);
+
 	//Load HeightMap Texture
 	unsigned int heightMap = 0;// = loadTexture("..\\resources\\heightMap.jpg");
 	//Bind
@@ -137,9 +139,9 @@ int main()
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 
-			// Terrain Drawing
-	    
-	    terrainShader.setMat4("projection", projection);
+		// Terrain Drawing
+
+		terrainShader.setMat4("projection", projection);
 		terrainShader.setMat4("view", view);
 		terrainShader.setMat4("model", model);
 		terrainShader.setVec3("camPos", camera.Position);
@@ -158,7 +160,7 @@ int main()
 		ambient = glGetUniformLocation(terrainShader.ID, "light.ambient");
 		diffuse = glGetUniformLocation(terrainShader.ID, "light.diffuse");
 		specular = glGetUniformLocation(terrainShader.ID, "light.specular");
-		glUniform3f (lightPos, dirLightPos.x, dirLightPos.y, dirLightPos.z);
+		glUniform3f(lightPos, dirLightPos.x, dirLightPos.y, dirLightPos.z);
 		//glUniform3f(lightPos, camera.Position.x, camera.Position.y + 20.0, camera.Position.z - 2.0);
 		glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
 		glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
@@ -189,11 +191,12 @@ int main()
 		//
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
-	//	postProcessor.use(); // 
+	//	postProcessor.use(); // Use the post processing shader (right now this is drawing empty ? )
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		renderQuad(); // render our quad.
+		//
 
 		glBindVertexArray(terrainVAO);
 		glActiveTexture(GL_TEXTURE0);
@@ -252,7 +255,7 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
 	// Visual Keys
-	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) 
+	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		showNormals = !showNormals; // Swap to normal debugging shader visible
 	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 		usePerlin = !usePerlin; // Swap to perlin/height mapped
@@ -327,14 +330,14 @@ unsigned int loadTexture(char const * path)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		stbi_image_free(data);
-		std::cout << "Loaded texture at path: " << path << " width " << width << " id " << textureID <<  std::endl;
+		std::cout << "Loaded texture at path: " << path << " width " << width << " id " << textureID << std::endl;
 
 	}
 	else
 	{
 		std::cout << "Texture failed to load at path: " << path << std::endl;
 		stbi_image_free(data);
-		
+
 	}
 
 	return textureID;
@@ -423,11 +426,11 @@ void setFBODepth()
 
 
 // RENDERING
-void renderQuad() 
+void renderQuad()
 {
-	if(quadVAO == 0 )
+	if (quadVAO == 0)
 	{
-	
+
 		float quadVerts[] =
 		{
 			// Pos x, y, z		Tex coords
@@ -448,13 +451,14 @@ void renderQuad()
 
 
 
-void renderScene(Shader shader, Shader mS, Model m) 
+
+void renderScene(Shader shader, Shader mS, Model m)
 {
 
 
 }
 
-void renderTrees(Shader modelShader, Model m) 
+void renderTrees(Shader modelShader, Model m)
 {
 
 

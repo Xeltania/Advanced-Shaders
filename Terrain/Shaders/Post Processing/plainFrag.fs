@@ -2,12 +2,13 @@
 out vec4 FragColor ;
 
 
-in vec2 gNormals ;
-in vec3 FragPos ;
-in vec3 gWorldPos_FS_in ;
+in vec2 TexCoords;
+
+uniform sampler2D scene;
+
 
 void main()
 {
-    FragColor = vec4(1.0,0.0, 0.0,1.0) ;
+    FragColor = texture(scene, TexCoords) ;
 }
 	
