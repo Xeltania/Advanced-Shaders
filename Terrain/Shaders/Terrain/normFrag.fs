@@ -27,6 +27,8 @@ in float fog ; // Fog Visibility
 uniform vec3 camPos; // View Position
 uniform float scale;
 uniform vec3 sky ; // Clear colour of the window
+//
+uniform bool fogEnabled;
 
 vec3 colour;
 vec3 tint;
@@ -95,8 +97,10 @@ void main()
 	vec3 blinnPhong = (ambient + diffuse + specular);
 
 	FragColor = vec4( blinnPhong ,1.0);
-	// Mix Fog visibility
-	FragColor = mix(vec4(sky, 1.0), FragColor, fog);
+	
+	if(fogEnabled)
+		// Mix Fog visibility
+		FragColor = mix(vec4(sky, 1.0), FragColor, fog);
 
 }
 
