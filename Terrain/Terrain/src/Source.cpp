@@ -33,6 +33,7 @@ unsigned int textureDepthBuffer;
 //arrays
 unsigned int terrainVAO, terrainVBO;
 unsigned int quadVAO, quadVBO;
+unsigned int planeVAO, planeVBO;
 unsigned int FBO;
 
 
@@ -48,7 +49,7 @@ void setFBOColour();
 void setFBODepth();
 //
 void renderQuad();
-void renderScene(Shader shader, Shader mS, Model m);
+void renderScene(const Shader &shader);
 void renderTrees(Shader modelShader, Model m);
 //
 // camera
@@ -108,7 +109,7 @@ int main()
 	Shader postProcessor("..\\shaders\\Post Processing\\plainVert.vs", "..\\shaders\\Post Processing\\plainFrag.fs", 0, 0, 0);
 
 	//Load HeightMap Texture
-	unsigned int heightMap = 0;// = loadTexture("..\\resources\\heightMap.jpg");
+	unsigned int heightMap = 0;// loadTexture("..\\resources\\heightMap.jpg");
 	//Bind
 
 	int gridSize = 10;
@@ -122,6 +123,12 @@ int main()
 	const float clearG = 0.40f;
 	const float clearB = 0.80f;
 
+	// Lighting 
+	GLint lightPos, ambient, diffuse, specular;
+
+	// Frame Buffers
+	setFBOColour();
+	setFBODepth();
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -132,15 +139,18 @@ int main()
 		processInput(window);
 
 		// global view settings
+		glEnable(GL_DEPTH_TEST);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(clearR, clearG, clearB, 1.0f);
 		//
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 1200.0f);
+		float nearPlane = 1.f, farPlane = 1000.f;
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 
+		
 		// Terrain Drawing
-
+		/*terrainShader.use();
 		terrainShader.setMat4("projection", projection);
 		terrainShader.setMat4("view", view);
 		terrainShader.setMat4("model", model);
@@ -149,13 +159,10 @@ int main()
 		terrainShader.setFloat("scale", 90);
 		terrainShader.setInt("octaves", 50);
 		terrainShader.setInt("gridSize", gridSize);
-		terrainShader.setBool("fogEnabled", useFog);
-
-		terrainShader.use();
+		terrainShader.setBool("fogEnabled", useFog);*/
 
 		// Lighting
-		GLint lightPos, ambient, diffuse, specular;
-		dirLightPos.y += sin(glfwGetTime()) * 2;
+		dirLightPos.y += sin(glfwGetTime()) * 5;
 		lightPos = glGetUniformLocation(terrainShader.ID, "light.lightPos");
 		ambient = glGetUniformLocation(terrainShader.ID, "light.ambient");
 		diffuse = glGetUniformLocation(terrainShader.ID, "light.diffuse");
@@ -171,32 +178,9 @@ int main()
 		//terrainShader.setFloat("fogGradient", 0.5f);
 		//
 
-		//Viewport
+	
+		//Main Viewport
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-		// First pass frame buffer
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-		// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
-
-				// Second pass to render to screen
-		terrainShader.setMat4("projection", projection);
-		terrainShader.setMat4("view", view);
-		terrainShader.setMat4("model", model);
-		terrainShader.setVec3("camPos", camera.Position);
-		terrainShader.setInt("heightMap", 0);
-		terrainShader.setFloat("scale", 90);
-		terrainShader.setInt("octaves", 50);
-		terrainShader.setInt("gridSize", gridSize);
-		terrainShader.setBool("fogEnabled", useFog);
-		glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
-		//
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
-	//	postProcessor.use(); // Use the post processing shader (right now this is drawing empty ? )
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		renderQuad(); // render our quad.
-		//
 
 		glBindVertexArray(terrainVAO);
 		glActiveTexture(GL_TEXTURE0);
@@ -227,8 +211,50 @@ int main()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 		}
+		
+		// First pass frame buffer
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+		terrainShader.use();
+		terrainShader.setMat4("projection", projection);
+		terrainShader.setMat4("view", view);
+		terrainShader.setMat4("model", model);
+		terrainShader.setVec3("camPos", camera.Position);
+		terrainShader.setInt("heightMap", 0);
+		terrainShader.setFloat("scale", 90);
+		terrainShader.setInt("octaves", 50);
+		terrainShader.setInt("gridSize", gridSize);
+		terrainShader.setBool("fogEnabled", useFog);
+		lightPos = glGetUniformLocation(terrainShader.ID, "light.lightPos");
+		ambient = glGetUniformLocation(terrainShader.ID, "light.ambient");
+		diffuse = glGetUniformLocation(terrainShader.ID, "light.diffuse");
+		specular = glGetUniformLocation(terrainShader.ID, "light.specular");
+		glUniform3f(lightPos, dirLightPos.x, dirLightPos.y, dirLightPos.z);
+		//glUniform3f(lightPos, camera.Position.x, camera.Position.y + 20.0, camera.Position.z - 2.0);
+		glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
+		glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
+		glUniform3f(specular, 0.3f, 0.3f, 0.3f);
+		glEnable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBindVertexArray(terrainVAO);
+		glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 
+		// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
 
+		// Second pass to render to screen
+	//glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
+		//
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
+		postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
+		postProcessor.setFloat("nearPlane", nearPlane);
+		postProcessor.setFloat("farPlane", farPlane);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureDepthBuffer); // Bind Colour or Depth buffer
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		renderQuad(); // render our quad.
+		//
+
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -374,12 +400,7 @@ void setVAO(vector<float> vertices)
 void setFBOColour()
 {
 
-	// Generate an RBO to perform depth testing
-	unsigned int RBO;
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+	
 
 	// Create & bind FBO
 	glGenFramebuffers(1, &FBO);
@@ -394,6 +415,13 @@ void setFBOColour()
 	// Bind colour buffer to FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, textureColourBuffer);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColourBuffer, 0);
+
+	// Generate an RBO to perform depth testing
+	unsigned int RBO;
+	glGenRenderbuffers(1, &RBO);
+	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
 }
 
@@ -442,21 +470,28 @@ void renderQuad()
 
 		// Set plane VAO
 		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
 		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), &quadVerts, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	}
-
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
 }
 
 
 
 
-void renderScene(Shader shader, Shader mS, Model m)
+void renderScene(const Shader &shader)
 {
 
-
 }
+
 
 void renderTrees(Shader modelShader, Model m)
 {
