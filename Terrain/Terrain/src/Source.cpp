@@ -27,6 +27,8 @@ const unsigned int SHADOW_W = 5120;
 const unsigned int SHADOW_H = 5120;
 // Directional Light 
 glm::vec3 dirLightPos(0.1f, 1.0f, 0.2);
+glm::mat4 lightProjection, lightView; // View-Projection matrices for shadow mapping
+glm::mat4 lightSpaceMatrix; // Light Space Matrix : contains lightPos, targetPos, and 'up' vector.
 // Buffer textures
 unsigned int textureColourBuffer;
 unsigned int textureDepthBuffer;
@@ -35,7 +37,6 @@ unsigned int terrainVAO, terrainVBO;
 unsigned int quadVAO, quadVBO;
 unsigned int planeVAO, planeVBO;
 unsigned int FBO;
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -70,6 +71,9 @@ bool shadeNormals = false; // Bind to Tab key
 bool usePerlin = false; // Bind to 2 key : need to toggle between how cdm is calculated in TES
 bool useCDM = false; // Swap between the getNormal() and CDM calculated normals
 bool useFog = false;
+	// Colour / Depth Buffer
+bool toggleBuffers = false;
+
 
 
 int main()
@@ -102,11 +106,17 @@ int main()
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-
-	// simple vertex and fragment shader - add your own tess and geo shader
+	// Shaders
+		// Main Terrain Shader
 	Shader terrainShader("..\\shaders\\Terrain\\plainVert.vs", "..\\shaders\\Terrain\\normFrag.fs", "..\\shaders\\Terrain\\Norms.gs", "..\\shaders\\Terrain\\tessControlShader.tcs", "..\\shaders\\Terrain\\tessEvaluationShader.tes");
+		// Normal Debugging Shader
 	Shader drawNormal("..\\shaders\\Normals\\plainVert.vs", "..\\shaders\\Normals\\plainFrag.fs", "..\\shaders\\Normals\\normalGeometry.gs", "..\\shaders\\Normals\\tessControlShader.tcs", "..\\shaders\\Normals\\tessEvaluationShader.tes");
+		// Post Processing
 	Shader postProcessor("..\\shaders\\Post Processing\\plainVert.vs", "..\\shaders\\Post Processing\\plainFrag.fs", 0, 0, 0);
+	Shader depthShader("..\\shaders\\Post Processing\\depthVert.vs", "..\\shaders\\Post Processing\\depthFrag.fs", 0, 0, 0);
+	//
+		// texture for floor and cubes
+	unsigned int metal = loadTexture("..\\Resources\\metal.jpg");
 
 	//Load HeightMap Texture
 	unsigned int heightMap = 0;// loadTexture("..\\resources\\heightMap.jpg");
@@ -147,10 +157,15 @@ int main()
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
+		// Light Space Matrix 
+		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, nearPlane, farPlane);
+		lightView = glm::lookAt(dirLightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+		lightSpaceMatrix = lightProjection * lightView;
+		//
 
 		
 		// Terrain Drawing
-		/*terrainShader.use();
+		terrainShader.use();
 		terrainShader.setMat4("projection", projection);
 		terrainShader.setMat4("view", view);
 		terrainShader.setMat4("model", model);
@@ -159,7 +174,7 @@ int main()
 		terrainShader.setFloat("scale", 90);
 		terrainShader.setInt("octaves", 50);
 		terrainShader.setInt("gridSize", gridSize);
-		terrainShader.setBool("fogEnabled", useFog);*/
+		terrainShader.setBool("fogEnabled", useFog);
 
 		// Lighting
 		dirLightPos.y += sin(glfwGetTime()) * 5;
@@ -212,48 +227,75 @@ int main()
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 		}
 		
-		// First pass frame buffer
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-		terrainShader.use();
-		terrainShader.setMat4("projection", projection);
-		terrainShader.setMat4("view", view);
-		terrainShader.setMat4("model", model);
-		terrainShader.setVec3("camPos", camera.Position);
-		terrainShader.setInt("heightMap", 0);
-		terrainShader.setFloat("scale", 90);
-		terrainShader.setInt("octaves", 50);
-		terrainShader.setInt("gridSize", gridSize);
-		terrainShader.setBool("fogEnabled", useFog);
-		lightPos = glGetUniformLocation(terrainShader.ID, "light.lightPos");
-		ambient = glGetUniformLocation(terrainShader.ID, "light.ambient");
-		diffuse = glGetUniformLocation(terrainShader.ID, "light.diffuse");
-		specular = glGetUniformLocation(terrainShader.ID, "light.specular");
-		glUniform3f(lightPos, dirLightPos.x, dirLightPos.y, dirLightPos.z);
-		//glUniform3f(lightPos, camera.Position.x, camera.Position.y + 20.0, camera.Position.z - 2.0);
-		glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
-		glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
-		glUniform3f(specular, 0.3f, 0.3f, 0.3f);
-		glEnable(GL_DEPTH_TEST);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glBindVertexArray(terrainVAO);
-		glDrawArrays(GL_PATCHES, 0, terrain.getSize());
-
-		// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
-
-		// Second pass to render to screen
-	//glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
-		//
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
-		postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
-		postProcessor.setFloat("nearPlane", nearPlane);
-		postProcessor.setFloat("farPlane", farPlane);
+		// render scene from light's point of view
+		depthShader.use();
+		depthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		// change viewport
+		glViewport(0, 0, SHADOW_W, SHADOW_H);
+		glBindFramebuffer(GL_FRAMEBUFFER, FBO);  // bind FBO
+		glClear(GL_DEPTH_BUFFER_BIT);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureDepthBuffer); // Bind Colour or Depth buffer
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		renderQuad(); // render our quad.
-		//
+		glBindTexture(GL_TEXTURE_2D, metal);
+		depthShader.use();
+		renderScene(depthShader);  // render using depthShader - renders to FBO not screen
 
+
+		//now render to screen
+		// bind default framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);  // viewport for whole screen
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		terrainShader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, metal);  // attach texture for objects
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);  // attach texture as shadow map
+		renderScene(terrainShader);
+
+		if (toggleBuffers)
+		{
+			// First pass frame buffer
+			glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+			terrainShader.use();
+			terrainShader.setMat4("projection", projection);
+			terrainShader.setMat4("view", view);
+			terrainShader.setMat4("model", model);
+			terrainShader.setVec3("camPos", camera.Position);
+			terrainShader.setInt("heightMap", 0);
+			terrainShader.setFloat("scale", 90);
+			terrainShader.setInt("octaves", 50);
+			terrainShader.setInt("gridSize", gridSize);
+			terrainShader.setBool("fogEnabled", useFog);
+			lightPos = glGetUniformLocation(terrainShader.ID, "light.lightPos");
+			ambient = glGetUniformLocation(terrainShader.ID, "light.ambient");
+			diffuse = glGetUniformLocation(terrainShader.ID, "light.diffuse");
+			specular = glGetUniformLocation(terrainShader.ID, "light.specular");
+			glUniform3f(lightPos, dirLightPos.x, dirLightPos.y, dirLightPos.z);
+			//glUniform3f(lightPos, camera.Position.x, camera.Position.y + 20.0, camera.Position.z - 2.0);
+			glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
+			glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
+			glUniform3f(specular, 0.3f, 0.3f, 0.3f);
+			glEnable(GL_DEPTH_TEST);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glBindVertexArray(terrainVAO);
+			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
+
+			// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
+
+			// Second pass to render to screen
+			glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
+			//
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
+			postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
+			postProcessor.setFloat("nearPlane", nearPlane);
+			postProcessor.setFloat("farPlane", farPlane);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer); // Bind Colour or Depth buffer
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			renderQuad(); // render our quad.
+			//
+		}
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -289,6 +331,9 @@ void processInput(GLFWwindow *window)
 		useCDM = !useCDM; // Swap to getNormal/CDM
 	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		useFog = !useFog; // Toggle Fog
+	if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+		toggleBuffers = !toggleBuffers; // Toggle BUffers
+
 
 }
 
