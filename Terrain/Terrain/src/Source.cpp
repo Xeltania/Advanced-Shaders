@@ -27,7 +27,7 @@ const unsigned int SHADOW_W = 5120;
 const unsigned int SHADOW_H = 5120;
 // Directional Light 
 //glm::vec3 dirLightPos(0.1f, 1.0f, 0.2);
-glm::vec3 dirLightPos(1.2f, 350.f, 1.0f);
+glm::vec3 dirLightPos(300.f, 600.f, 200.f);
 glm::mat4 lightProjection, lightView; // View-Projection matrices for shadow mapping
 glm::mat4 lightSpaceMatrix; // Light Space Matrix : contains lightPos, targetPos, and 'up' vector.
 // Buffer textures
@@ -122,7 +122,7 @@ int main()
 	unsigned int metal = loadTexture("..\\Resources\\metal.jpg");
 
 	//Load HeightMap Texture
-	unsigned int heightMap = 0;// loadTexture("..\\resources\\heightMap.jpg");
+	unsigned int heightMap = 2;// loadTexture("..\\resources\\heightMap.jpg");
 	//Bind
 
 	int gridSize = 10;
@@ -140,12 +140,12 @@ int main()
 	GLint lightPos, ambient, diffuse, specular;
 
 	// Frame Buffers
-	setFBOColour();
+	//setFBOColour();
 	setFBODepth();
 	//
 	terrainShader.use();
-	terrainShader.setInt("texture1", 0);
-	terrainShader.setInt("shadowMap", 1);
+	terrainShader.setInt("texture1", 1);
+	terrainShader.setInt("shadowMap", 0);
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -159,20 +159,26 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(clearR, clearG, clearB, 1.0f);
 		//
-		float nearPlane = 1.f, farPlane = 1000.f;
+		float nearPlane = 1.f, farPlane = 2000.f;
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 		// Light Space Matrix 
-		lightProjection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, nearPlane, farPlane);
-		lightView = glm::lookAt(dirLightPos, glm::vec3(100.0f), glm::vec3(0.0, 1.0, 0.0));
+		lightProjection = glm::ortho(-350.0f, 350.0f, -350.0f, 350.0f, nearPlane, farPlane);
+		glm::vec3 wLightPos(400, 600, 900);
+		glm::vec3 targetPos(400, 50, 400);
+		lightView = glm::lookAt(wLightPos, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		//
 					// Lighting
-		dirLightPos.y += sin(glfwGetTime()) * 5;
+		//dirLightPos.y += sin(glfwGetTime()) * 5;
 
 		if (toggleShadowMapping)
 		{
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, heightMap);			
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, metal);
 			// render scene from light's point of view
 			depthShader.use();
 			depthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
@@ -181,7 +187,7 @@ int main()
 			glBindFramebuffer(GL_FRAMEBUFFER, FBO);  // bind FBO
 			glClear(GL_DEPTH_BUFFER_BIT);
 			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, metal);
+			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);
 			depthShader.use();
 			renderScene(depthShader);  // render using depthShader - renders to FBO not screen
 
@@ -201,7 +207,7 @@ int main()
 			terrainShader.setInt("octaves", 50);
 			terrainShader.setInt("gridSize", gridSize);
 			terrainShader.setBool("fogEnabled", useFog);
-
+			terrainShader.setBool("shadows", toggleShadowMapping);
 			lightPos = glGetUniformLocation(terrainShader.ID, "light.lightPos");
 			ambient = glGetUniformLocation(terrainShader.ID, "light.ambient");
 			diffuse = glGetUniformLocation(terrainShader.ID, "light.diffuse");
@@ -211,9 +217,9 @@ int main()
 			glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
 			glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
 			glUniform3f(specular, 0.3f, 0.3f, 0.3f);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, metal);  // attach texture for objects
 			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, metal);  // attach texture for objects
+			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);  // attach texture as shadow map
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 		}
@@ -250,7 +256,7 @@ int main()
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 			glBindVertexArray(terrainVAO);
-			glActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, heightMap);
 			// Colour the terrain in wireframe or fill depending on key press event
 			if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -284,8 +290,8 @@ int main()
 			// First pass frame buffer
 			glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 			terrainShader.use();
-			terrainShader.setMat4("projection", projection);
-			terrainShader.setMat4("view", view);
+			terrainShader.setMat4("projection", lightProjection);
+			terrainShader.setMat4("view", lightView);
 			terrainShader.setMat4("model", model);
 			terrainShader.setVec3("camPos", camera.Position);
 			terrainShader.setInt("heightMap", 0);

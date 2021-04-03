@@ -23,7 +23,7 @@ in vec3 gNormals; // geo shader normals
 in vec2 TexCoordsTE; // Texture coordinates
 in vec3 posES; // Fragment position
 in float fog ; // Fog Visibility
-in vec4 FragPosLightSpace ;
+//in vec4 FragPosLightSpace ;
 //
 
 uniform vec3 camPos; // View Position
@@ -31,6 +31,8 @@ uniform float scale;
 uniform vec3 sky ; // Clear colour of the window
 //
 uniform bool fogEnabled;
+uniform bool shadows;
+uniform mat4 lightSpaceMatrix;  // this is different - we're passing this to calculate shadow in frag shader
 
 vec3 colour;
 vec3 tint;
@@ -46,6 +48,7 @@ uniform sampler2D shadowMap;   // shadow map texture
 void main()
 {    
 
+	vec4 FragPosLightSpace = lightSpaceMatrix * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it
 
 	float height = gWorldPos_FS_in.y / scale;
 	vec4 green = vec4(0.3, 0.35, 0.15, 0.0);
@@ -107,6 +110,15 @@ void main()
 	if(fogEnabled)
 		// Mix Fog visibility
 		FragColor = mix(vec4(sky, 1.0), FragColor, fog);
+	if(shadows)
+	{
+
+	float shadow = calcShadow(FragPosLightSpace); 
+	//combine
+	// 1-shadow - how much a fragement is NOT in shadow
+    FragColor = vec4(ambient + (1.0-shadow)*(diffuse + specular),1.0f);
+	FragColor = vec4(vec3(shadow),1.0) ;
+	}
 
 }
 
@@ -122,8 +134,9 @@ float calcShadow(vec4 fragPosLightSpace)  //incomplete
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
     // get depth of current fragment from light's perspective ( call it current depth)
 	float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-	if(currentDepth > closestDepth)
+  //  vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+	// check whether current frag pos is in shadow
+	if(currentDepth > 1.0f)
 		shadow = 1;
 	
 
