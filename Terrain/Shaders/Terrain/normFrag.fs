@@ -23,6 +23,8 @@ in vec3 gNormals; // geo shader normals
 in vec2 TexCoordsTE; // Texture coordinates
 in vec3 posES; // Fragment position
 in float fog ; // Fog Visibility
+in vec4 FragPosLightSpace ;
+//
 
 uniform vec3 camPos; // View Position
 uniform float scale;
@@ -36,6 +38,10 @@ vec3 tint;
 // Uniform textures to use instead of tinting?
 // uniform sampler2D grassTex;
 
+// Calculating shadows:
+float calcShadow(vec4 fragPosLightSpace);
+uniform sampler2D texture1;  // texture for objects
+uniform sampler2D shadowMap;   // shadow map texture
 
 void main()
 {    
@@ -104,3 +110,22 @@ void main()
 
 }
 
+
+float calcShadow(vec4 fragPosLightSpace)  //incomplete
+{
+    float shadow = 0.0 ; 
+    // perform perspective divide values in range [-1,1]
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // sample from shadow map  (returns a float; call it closestDepth)
+	float closestDepth = texture(shadowMap, projCoords.xy).r;
+    // get depth of current fragment from light's perspective ( call it current depth)
+	float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+	if(currentDepth > closestDepth)
+		shadow = 1;
+	
+
+    return shadow;
+}
