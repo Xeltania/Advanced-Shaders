@@ -27,7 +27,7 @@ const unsigned int SHADOW_W = 5120;
 const unsigned int SHADOW_H = 5120;
 // Directional Light 
 //glm::vec3 dirLightPos(0.1f, 1.0f, 0.2);
-glm::vec3 dirLightPos(1000.f, 1000.f, 1100.f);
+glm::vec3 dirLightPos(1.2f, 3.5f, 1.0f);
 glm::mat4 lightProjection, lightView; // View-Projection matrices for shadow mapping
 glm::mat4 lightSpaceMatrix; // Light Space Matrix : contains lightPos, targetPos, and 'up' vector.
 // Buffer textures
@@ -37,7 +37,7 @@ unsigned int textureDepthBuffer;
 unsigned int terrainVAO, terrainVBO;
 unsigned int quadVAO, quadVBO;
 unsigned int planeVAO, planeVBO;
-unsigned int FBO;
+unsigned int depthFBO, colourFBO;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -118,11 +118,9 @@ int main()
 	Shader depthShader("..\\shaders\\Post Processing\\depthVert.vs", "..\\shaders\\Post Processing\\depthFrag.fs", 0, 0, 0);
 	//Shader shadowShader("..\\shaders\\Post Processing\\shadowVert.vs", "..\\shaders\\Terrain\\normFrag.fs", "..\\shaders\\Terrain\\Norms.gs", "..\\shaders\\Terrain\\tessControlShader.tcs", "..\\shaders\\Terrain\\tessEvaluationShader.tes"); // seperate shader for shadow mapping?
 	//
-		// texture for floor and cubes
-	unsigned int metal = loadTexture("..\\Resources\\metal.jpg");
 
 	//Load HeightMap Texture
-	unsigned int heightMap = 2;// loadTexture("..\\resources\\heightMap.jpg");
+	//unsigned int heightMap = 0;// loadTexture("..\\resources\\heightMap.jpg");
 	//Bind
 
 	int gridSize = 10;
@@ -144,8 +142,10 @@ int main()
 	setFBODepth();
 	//
 	terrainShader.use();
-	terrainShader.setInt("texture1", 1);
 	terrainShader.setInt("shadowMap", 0);
+
+	dirLightPos = glm::vec3(200.f, 800.f, 800.f);
+	// 100 10 300
 	while (!glfwWindowShouldClose(window))
 	{
 
@@ -159,38 +159,38 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(clearR, clearG, clearB, 1.0f);
 		//
-		float nearPlane = 1.f, farPlane = 2000.f;
+		float nearPlane = 1.f, farPlane = 1000.f;
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
 		glm::mat4 view = camera.GetViewMatrix();
 		glm::mat4 model = glm::mat4(1.0f);
 		// Light Space Matrix 
-		lightProjection = glm::ortho(-350.0f, 350.0f, -350.0f, 350.0f, nearPlane, farPlane);
-		glm::vec3 wLightPos(800, 600, 900);
-		glm::vec3 targetPos(400, 50, 400);
-		lightView = glm::lookAt(dirLightPos, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+		lightProjection = glm::ortho(-500.0f, 500.0f, -500.0f, 500.0f, nearPlane, farPlane);
+		
+		glm::vec3 targetPos(260, 100, 900);
+		lightView = glm::lookAt(dirLightPos, targetPos, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
+		terrainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 		//
 					// Lighting
-		dirLightPos.z -= sin(glfwGetTime()) * 20;
-		dirLightPos.y += sin(glfwGetTime()) * 5;
+		//dirLightPos.z -= sin(glfwGetTime()) * 5;
+		//dirLightPos.y += sin(glfwGetTime()) * 5;
 
 		if (toggleShadowMapping)
 		{
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, heightMap);			
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, metal);
+		//	glActiveTexture(GL_TEXTURE0);
+		//	glBindTexture(GL_TEXTURE_2D, heightMap);			
 			// render scene from light's point of view
-			depthShader.use();
-			depthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+			terrainShader.use();
+			terrainShader.setMat4("projection", lightProjection);
+			terrainShader.setMat4("view", lightView);
+			terrainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 			// change viewport
 			glViewport(0, 0, SHADOW_W, SHADOW_H);
-			glBindFramebuffer(GL_FRAMEBUFFER, FBO);  // bind FBO
+			glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);  // bind FBO
 			glClear(GL_DEPTH_BUFFER_BIT);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);
-			depthShader.use();
-			renderScene(depthShader);  // render using depthShader - renders to FBO not screen
+			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 
 
 			//now render to screen
@@ -218,8 +218,6 @@ int main()
 			glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
 			glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
 			glUniform3f(specular, 0.3f, 0.3f, 0.3f);
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, metal);  // attach texture for objects
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);  // attach texture as shadow map
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
@@ -257,8 +255,8 @@ int main()
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 			glBindVertexArray(terrainVAO);
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, heightMap);
+		//	glActiveTexture(GL_TEXTURE0);
+		//	glBindTexture(GL_TEXTURE_2D, heightMap);
 			// Colour the terrain in wireframe or fill depending on key press event
 			if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -289,7 +287,8 @@ int main()
 		if (toggleBuffers)
 		{
 			// First pass frame buffer
-			glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+			glViewport(0, 0, SHADOW_W, SHADOW_H);
+			glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 			terrainShader.use();
 			terrainShader.setMat4("projection", lightProjection);
 			terrainShader.setMat4("view", lightView);
@@ -319,6 +318,7 @@ int main()
 			// Second pass to render to screen
 		//	glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
 			//
+			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
 			postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
@@ -486,8 +486,8 @@ void setFBOColour()
 	
 
 	// Create & bind FBO
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glGenFramebuffers(1, &colourFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, colourFBO);
 	// Create colour attachment texture
 	glGenTextures(1, &textureColourBuffer);
 	glBindTexture(GL_TEXTURE_2D, textureColourBuffer);
@@ -511,21 +511,21 @@ void setFBOColour()
 void setFBODepth()
 {
 	// Create and bind FBO
-	glGenFramebuffers(1, &FBO);
+	glGenFramebuffers(1, &depthFBO);
 	// Create depth texture
 	glGenTextures(1, &textureDepthBuffer);
 	glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);
 	// Parameters for sampling ( null texture )
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_W, SHADOW_H, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	//
-	float borderColour[] = { 1.0,1.0,1.0,1.0 }; // Border colour
+	float borderColour[] = { 1.0f,1.0f,1.0f,1.0f }; // Border colour
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColour);
 	// Attach depth texture as FBO depth buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textureDepthBuffer, 0);
 	// GL_NONE : Not attaching a colour buffer
 	glDrawBuffer(GL_NONE);

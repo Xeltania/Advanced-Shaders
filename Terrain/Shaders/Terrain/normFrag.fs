@@ -42,7 +42,6 @@ vec3 tint;
 
 // Calculating shadows:
 float calcShadow(vec4 fragPosLightSpace);
-uniform sampler2D texture1;  // texture for objects
 uniform sampler2D shadowMap;   // shadow map texture
 
 void main()
@@ -117,7 +116,7 @@ void main()
 	//combine
 	// 1-shadow - how much a fragement is NOT in shadow
     FragColor = vec4(ambient + (1.0-shadow)*(diffuse + specular),1.0f);
-	FragColor = vec4(vec3(shadow),1.0) ;
+	//FragColor = vec4(vec3(shadow),1.0) ;
 	}
 
 }

@@ -17,6 +17,7 @@ void main()
 	 float depth = texture(scene, TexCoords).r;
    // FragColor = texture(scene, TexCoords) ;
     FragColor = vec4(vec3(linearizeDepth(depth) / farPlane), 1.0);
+	FragColor = vec4(vec3(depth),1.0);
 }
 	
 float linearizeDepth(float depth)
