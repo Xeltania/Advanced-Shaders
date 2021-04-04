@@ -136,7 +136,7 @@ float calcShadow(vec4 fragPosLightSpace)  //incomplete
 	float currentDepth = projCoords.z;
   //  vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	// check whether current frag pos is in shadow
-	if(currentDepth > 1.0f)
+	if(currentDepth > closestDepth)
 		shadow = 1;
 	
 

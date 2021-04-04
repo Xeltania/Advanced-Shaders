@@ -27,7 +27,7 @@ const unsigned int SHADOW_W = 5120;
 const unsigned int SHADOW_H = 5120;
 // Directional Light 
 //glm::vec3 dirLightPos(0.1f, 1.0f, 0.2);
-glm::vec3 dirLightPos(300.f, 600.f, 200.f);
+glm::vec3 dirLightPos(1000.f, 1000.f, 1100.f);
 glm::mat4 lightProjection, lightView; // View-Projection matrices for shadow mapping
 glm::mat4 lightSpaceMatrix; // Light Space Matrix : contains lightPos, targetPos, and 'up' vector.
 // Buffer textures
@@ -165,13 +165,14 @@ int main()
 		glm::mat4 model = glm::mat4(1.0f);
 		// Light Space Matrix 
 		lightProjection = glm::ortho(-350.0f, 350.0f, -350.0f, 350.0f, nearPlane, farPlane);
-		glm::vec3 wLightPos(400, 600, 900);
+		glm::vec3 wLightPos(800, 600, 900);
 		glm::vec3 targetPos(400, 50, 400);
-		lightView = glm::lookAt(wLightPos, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+		lightView = glm::lookAt(dirLightPos, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		//
 					// Lighting
-		//dirLightPos.y += sin(glfwGetTime()) * 5;
+		dirLightPos.z -= sin(glfwGetTime()) * 20;
+		dirLightPos.y += sin(glfwGetTime()) * 5;
 
 		if (toggleShadowMapping)
 		{
@@ -316,7 +317,7 @@ int main()
 			// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
 
 			// Second pass to render to screen
-			glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
+		//	glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
 			//
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
