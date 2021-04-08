@@ -16,7 +16,9 @@
 #include<string>
 #include <iostream>
 #include <numeric>
-
+// Shadows
+#include "CSM.h"
+#include "Render.h"
 
 
 // settings
@@ -111,9 +113,9 @@ int main()
 	// Shaders
 		// Main Terrain Shader
 	Shader terrainShader("..\\shaders\\Terrain\\plainVert.vs", "..\\shaders\\Terrain\\normFrag.fs", "..\\shaders\\Terrain\\Norms.gs", "..\\shaders\\Terrain\\tessControlShader.tcs", "..\\shaders\\Terrain\\tessEvaluationShader.tes");
-		// Normal Debugging Shader
+	// Normal Debugging Shader
 	Shader drawNormal("..\\shaders\\Normals\\plainVert.vs", "..\\shaders\\Normals\\plainFrag.fs", "..\\shaders\\Normals\\normalGeometry.gs", "..\\shaders\\Normals\\tessControlShader.tcs", "..\\shaders\\Normals\\tessEvaluationShader.tes");
-		// Post Processing
+	// Post Processing
 	Shader postProcessor("..\\shaders\\Post Processing\\plainVert.vs", "..\\shaders\\Post Processing\\plainFrag.fs", 0, 0, 0);
 	Shader depthShader("..\\shaders\\Post Processing\\depthVert.vs", "..\\shaders\\Post Processing\\depthFrag.fs", 0, 0, 0);
 	//Shader shadowShader("..\\shaders\\Post Processing\\shadowVert.vs", "..\\shaders\\Terrain\\normFrag.fs", "..\\shaders\\Terrain\\Norms.gs", "..\\shaders\\Terrain\\tessControlShader.tcs", "..\\shaders\\Terrain\\tessEvaluationShader.tes"); // seperate shader for shadow mapping?
@@ -144,10 +146,22 @@ int main()
 	terrainShader.use();
 	terrainShader.setInt("shadowMap", 0);
 
-	dirLightPos = glm::vec3(200.f, 800.f, 800.f);
+	dirLightPos = glm::vec3(200.f, 500.f, 200.f);
 	// 100 10 300
+	float shadowBias = 0.001f;
+
+
+	// CSM 
+	const int numCascades = 3;
+	unsigned int depthMapArray[numCascades];
+	unsigned int depthMapFBOArray[numCascades];
+	CSM csm(SHADOW_W, SHADOW_H, depthMapArray, depthMapFBOArray, numCascades);
+	Render renderer;
+
 	while (!glfwWindowShouldClose(window))
 	{
+		renderer.setTextures(terrainShader);
+		terrainShader.setInt("cascades", numCascades);
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -170,13 +184,22 @@ int main()
 		lightView = glm::lookAt(dirLightPos, targetPos, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		terrainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+		terrainShader.setFloat("bias", shadowBias);
+		// Fog
+		terrainShader.setVec3("sky", glm::vec3(clearR, clearG, clearB));
 		//
 					// Lighting
-		//dirLightPos.z -= sin(glfwGetTime()) * 5;
-		//dirLightPos.y += sin(glfwGetTime()) * 5;
+	//	dirLightPos.z -= sin(glfwGetTime()) * 5;
+		dirLightPos.y += sin(glfwGetTime()) * 5;
+
+			// CSM
+		// Created FBO attachments, now take the first pass of the scene. Bind each framebuffer adn fill with depth values
+		
 
 		if (toggleShadowMapping)
 		{
+			
+		
 		//	glActiveTexture(GL_TEXTURE0);
 		//	glBindTexture(GL_TEXTURE_2D, heightMap);			
 			// render scene from light's point of view
@@ -184,20 +207,19 @@ int main()
 			terrainShader.setMat4("projection", lightProjection);
 			terrainShader.setMat4("view", lightView);
 			terrainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
-			// change viewport
+			terrainShader.setFloat("bias", shadowBias);
+		/*	// change viewport
 			glViewport(0, 0, SHADOW_W, SHADOW_H);
 			glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);  // bind FBO
 			glClear(GL_DEPTH_BUFFER_BIT);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
-
-
+			*/
+			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO);
 			//now render to screen
-			// bind default framebuffer
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);  // viewport for whole screen
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			terrainShader.use();
 			terrainShader.setMat4("projection", projection);
 			terrainShader.setMat4("view", view);
@@ -218,8 +240,21 @@ int main()
 			glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
 			glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
 			glUniform3f(specular, 0.3f, 0.3f, 0.3f);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, textureDepthBuffer);  // attach texture as shadow map
+			//
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glEnable(GL_DEPTH_TEST);
+			glClearColor(clearR, clearG, clearB, 1.0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+			// Set textures to active and bind them 
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, depthMapArray[0]);  // attach texture as shadow map
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, depthMapArray[1]);
+			glActiveTexture(GL_TEXTURE3);
+			glBindTexture(GL_TEXTURE_2D, depthMapArray[2]);
+			//
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 		}
 		else {
@@ -244,11 +279,6 @@ int main()
 			glUniform3f(ambient, 0.2f, 0.2f, 0.2f);
 			glUniform3f(diffuse, 0.55f, 0.55f, 0.55f);
 			glUniform3f(specular, 0.3f, 0.3f, 0.3f);
-
-			// Fog
-			terrainShader.setVec3("sky", glm::vec3(clearR, clearG, clearB));
-			//terrainShader.setFloat("fogGradient", 0.5f);
-			//
 
 
 			//Main Viewport

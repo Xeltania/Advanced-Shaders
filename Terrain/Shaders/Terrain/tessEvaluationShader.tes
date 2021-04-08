@@ -30,7 +30,9 @@ out vec3 normES;
 out vec3 posES ;
 out vec2 TexCoordsTE;
 out float vis;
-
+// CSM
+out float clipSpaceZ;
+//
 // Forward declare functions
 float noise(vec3 pos, int octaves);
 
@@ -85,6 +87,7 @@ void main()
    
    // transform vertex to clip space  - NOTE: WE NEED TO DO IT HERE NOW and not in vertex shader
    gl_Position = projection * view * vec4(posES, 1.0);
+   clipSpaceZ = gl_Position.z;
    
    	// Fog -> pass this to frag shader
 	float distFromCam = distance(camPos, posES);

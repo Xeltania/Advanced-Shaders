@@ -1,10 +1,15 @@
 ﻿  Source.cpp
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(152): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(391): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(392): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(396): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(397): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(399): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(400): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(413): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(166): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(193): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
+          with
+          [
+              T=float
+          ]
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(421): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(422): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(426): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(427): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(429): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(430): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(443): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   Terrain.vcxproj -> C:\Users\Xeltania\Documents\GitHub\Advanced-Shaders\Terrain\Debug\Terrain.exe
