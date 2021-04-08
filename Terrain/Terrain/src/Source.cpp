@@ -150,18 +150,17 @@ int main()
 	// 100 10 300
 	float shadowBias = 0.001f;
 
-
 	// CSM 
 	const int numCascades = 3;
 	unsigned int depthMapArray[numCascades];
 	unsigned int depthMapFBOArray[numCascades];
+	terrainShader.setInt("cascades", numCascades);
 	CSM csm(SHADOW_W, SHADOW_H, depthMapArray, depthMapFBOArray, numCascades);
 	Render renderer;
 
 	while (!glfwWindowShouldClose(window))
 	{
 		renderer.setTextures(terrainShader);
-		terrainShader.setInt("cascades", numCascades);
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;

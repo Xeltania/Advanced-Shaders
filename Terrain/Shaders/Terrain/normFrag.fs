@@ -58,9 +58,11 @@ int findAppropriateMap(float z, float ends[4]);
 void main()
 {    
 	int map = findAppropriateMap(clipSpaceZ, cascadeEnds);
-	
-	vec4 FragPosLightSpace = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it
-
+	vec4 FragPosLightSpace[cascades];
+	//
+	for (int i = 0; i < cascades; i++)
+		FragPosLightSpace[i] = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it
+	//
 	float height = gWorldPos_FS_in.y / scale;
 	vec4 green = vec4(0.3, 0.35, 0.15, 0.0);
 	vec4 grey = vec4(0.5, 0.4, 0.5, 0.0);
