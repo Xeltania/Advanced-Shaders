@@ -28,4 +28,5 @@ private :
 	//
 	float FOV, aspectR, near, far;
 	glm::mat4 cameraProj;
+
 };

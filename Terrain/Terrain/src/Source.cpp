@@ -160,7 +160,9 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
+		// set the textures for the CSM uniforms
 		renderer.setTextures(terrainShader);
+		//
 
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -205,7 +207,7 @@ int main()
 			terrainShader.use();
 			terrainShader.setMat4("projection", lightProjection);
 			terrainShader.setMat4("view", lightView);
-			terrainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+			//terrainShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
 			terrainShader.setFloat("bias", shadowBias);
 		/*	// change viewport
 			glViewport(0, 0, SHADOW_W, SHADOW_H);

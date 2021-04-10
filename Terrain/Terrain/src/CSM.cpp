@@ -70,8 +70,13 @@ void CSM::setDepthFBO()
 void CSM::firstPassFillShadowMaps(Terrain terrain, Shader shader, int VAO)
 {
 	// Update view and projection at each iteration 
-	std::vector<glm::mat4> views = frustum.getViewMatrices();
-	std::vector<glm::mat4>projections = frustum.getProjectionMatrices();
+	std::vector<glm::mat4> views;
+	views.resize(3);
+	std::vector<glm::mat4>projections;
+	projections.resize(3);
+	//
+	views = frustum.getViewMatrices();
+	projections = frustum.getProjectionMatrices();
 
 	shader.use();
 	// LSM
@@ -80,9 +85,9 @@ void CSM::firstPassFillShadowMaps(Terrain terrain, Shader shader, int VAO)
 	shader.setMat4("lightSpaceMatrix[2]", projections.at(2)*views.at(2));
 	// Cascade Ends
 	shader.setFloat("cascadeEnds[0]", transformCascadeEnds(frustum.cascadeEnds[0]));
-	shader.setFloat("cascadeEnds[0]", transformCascadeEnds(frustum.cascadeEnds[1]));
-	shader.setFloat("cascadeEnds[0]", transformCascadeEnds(frustum.cascadeEnds[2]));
-	shader.setFloat("cascadeEnds[0]", transformCascadeEnds(frustum.cascadeEnds[3]));
+	shader.setFloat("cascadeEnds[1]", transformCascadeEnds(frustum.cascadeEnds[1]));
+	shader.setFloat("cascadeEnds[2]", transformCascadeEnds(frustum.cascadeEnds[2]));
+	shader.setFloat("cascadeEnds[3]", transformCascadeEnds(frustum.cascadeEnds[3]));
 	for (int i = 0; i < n; i++)
 	{
 

@@ -33,7 +33,7 @@ uniform vec3 sky ; // Clear colour of the window
 uniform bool fogEnabled;
 uniform bool shadows;
 uniform float bias; // Uniform used to set the bias value of the shadows.
-uniform int cascades; // Number of cascades for CSM.
+const int cascades = 3; // Number of cascades for CSM.
 
 vec3 colour;
 vec3 tint;
@@ -42,26 +42,19 @@ vec3 tint;
 // uniform sampler2D grassTex;
 
 // Calculating shadows:
-float calcShadow(vec4 fragPosLightSpace, float bias);
+float calcShadow(vec4 fragPosLightSpace, float bias, int map);
 uniform sampler2D shadowMap[cascades];   // shadow map texture
 uniform mat4 lightSpaceMatrix[cascades];  // this is different - we're passing this to calculate shadow in frag shader
-uniform const cascadeEnds[cascades+1];
+uniform float cascadeEnds[cascades+1];
 
-//CSM
-uniform sampler2D texture1;
-uniform sampler2D texture2;
-uniform sampler2D texture3;
-uniform sampler2D texture4;
 
 int findAppropriateMap(float z, float ends[4]);
 
 void main()
 {    
 	int map = findAppropriateMap(clipSpaceZ, cascadeEnds);
-	vec4 FragPosLightSpace[cascades];
 	//
-	for (int i = 0; i < cascades; i++)
-		FragPosLightSpace[i] = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it
+	vec4 FragPosLightSpace = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it
 	//
 	float height = gWorldPos_FS_in.y / scale;
 	vec4 green = vec4(0.3, 0.35, 0.15, 0.0);
@@ -122,7 +115,7 @@ void main()
 	if(shadows)
 	{
 
-	float shadow = calcShadow(FragPosLightSpace, bias); 
+	float shadow = calcShadow(FragPosLightSpace, bias, map); 
 	//combine
 	// 1-shadow - how much a fragement is NOT in shadow
  //   FragColor = vec4(ambient + (1.0-shadow)*(diffuse + specular),1.0f);
@@ -139,7 +132,7 @@ void main()
 }
 
 
-float calcShadow(vec4 fragPosLightSpace, float bias)  //incomplete
+float calcShadow(vec4 fragPosLightSpace, float bias, int map)  //incomplete
 {
     float shadow = 0.0 ; 
     // perform perspective divide values in range [-1,1]
@@ -147,17 +140,17 @@ float calcShadow(vec4 fragPosLightSpace, float bias)  //incomplete
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
     // sample from shadow map  (returns a float; call it closestDepth)
-	float closestDepth = texture(shadowMap, projCoords.xy).r;
+	float closestDepth = texture(shadowMap[map], projCoords.xy).r;
     // get depth of current fragment from light's perspective ( call it current depth)
 	float currentDepth = projCoords.z;
 	// Check if frag pos is within the shadow 
-	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+	vec2 texelSize = 1.0 / textureSize(shadowMap[map], 0);
 		// Bias to remove artifacted / blocky shadows
 	for ( int i = 0 ; i < 2 ; i ++)
 	{
-		for ( int j = 0 ; j < 2 ; j ++)
+		for ( int j = -1 ; j < 2 ; j ++)
 		{
-			float pcf = texture(shadowMap, projCoords.xy + vec2(i, j) * texelSize).r;
+			float pcf = texture(shadowMap[map], projCoords.xy + vec2(i, j) * texelSize).r;
 			if(currentDepth - bias > pcf)
 				shadow += 1 ;
 		}
