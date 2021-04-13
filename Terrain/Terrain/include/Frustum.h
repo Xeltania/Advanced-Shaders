@@ -10,7 +10,7 @@ public:
 	Frustum() {}
 	// Setters
 	void setValues(float FOV, float ar, float near, float far);
-	void setLight(Light l) { light = l; }
+	void setLightDir(glm::vec3 dir) { light.setLightDir(dir); }
 	void setcameraView(glm::mat4 view) { cameraView = view; }
 	void setCascadeEnds(float a, float b, float c, float d);
 	void transformToWorldSpace();

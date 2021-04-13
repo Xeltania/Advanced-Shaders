@@ -7,7 +7,7 @@ public:
 	Light() {}
 	// Setters
 	void setLookingAt(glm::vec3 pos);
-	void setLightDir(glm::vec3 dir) { lightDir = dir; }
+	void setLightDir(glm::vec3 dir) { lightDir = dir; makeLightView(); }
 	// Getter
 	glm::mat4 getLightView() { return lightView; }
 	glm::mat4 getOrthoProjection(float r);

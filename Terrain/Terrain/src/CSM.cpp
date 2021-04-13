@@ -10,28 +10,28 @@ CSM::CSM( unsigned int shadowWidth, unsigned int shadowHeight, unsigned int *dep
 	n = cascades;
 	shadowW = shadowWidth;
 	shadowH = shadowHeight;
-	depthMap = depthMapArray;
-	depthMapFBO = depthMapFBOArray;
+	//depthMap = depthMapArray;
+	//depthMapFBO = depthMapFBOArray;
 	// Set The Depth FBO
 	setDepthFBO();
 
 }
 
-CSM::CSM(int w, int h, unsigned int * depthMapArray, unsigned int * depthMapArrayFBO, glm::vec3 direction, float fieldOfView, float ar, float nearPlane, float farPlane)
+CSM::CSM(int w, int h, glm::vec3 direction, float fieldOfView, float ar, float nearPlane, float farPlane, int cascades)
 {
+	n = cascades;
 	shadowW = w;
 	shadowH = h;
-	depthMap = depthMapArray;
-	depthMapFBO = depthMapArrayFBO;
+	depthMap.resize(n);
+	depthMapFBO.resize(n);
 	FOV = fieldOfView;
 	aspectR = ar;
 	near = nearPlane;
 	far = farPlane;
 	//
 	setDepthFBO();
-	light.setLightDir(direction);
+	frustum.setLightDir(direction);
 	frustum.setCascadeEnds(nearPlane, farPlane / 20, farPlane / 5, farPlane);
-	frustum.setLight(light);
 	frustum.setValues(FOV, ar, 0, 0);
 
 }
@@ -41,9 +41,9 @@ CSM::CSM(int w, int h, unsigned int * depthMapArray, unsigned int * depthMapArra
 void CSM::setDepthFBO()
 {
 	// Gen Frame Buffer
-	glGenFramebuffers(n, depthMapFBO);
+	glGenFramebuffers(n, depthMapFBO.data());
 	// Create Depth Texture
-	glGenTextures(n, depthMap);
+	glGenTextures(n, depthMap.data());
 	// Set up each frame buffer
 	for (GLuint i = 0; i < n; i++)
 	{
@@ -84,10 +84,10 @@ void CSM::firstPassFillShadowMaps(Terrain terrain, Shader shader, int VAO)
 	shader.setMat4("lightSpaceMatrix[1]", projections.at(1)*views.at(1));
 	shader.setMat4("lightSpaceMatrix[2]", projections.at(2)*views.at(2));
 	// Cascade Ends
-	shader.setFloat("cascadeEnds[0]", transformCascadeEnds(frustum.cascadeEnds[0]));
-	shader.setFloat("cascadeEnds[1]", transformCascadeEnds(frustum.cascadeEnds[1]));
-	shader.setFloat("cascadeEnds[2]", transformCascadeEnds(frustum.cascadeEnds[2]));
-	shader.setFloat("cascadeEnds[3]", transformCascadeEnds(frustum.cascadeEnds[3]));
+	shader.setFloat("cascadeEnds[0]", transformCascadeEnds(-frustum.cascadeEnds[0]));
+	shader.setFloat("cascadeEnds[1]", transformCascadeEnds(-frustum.cascadeEnds[1]));
+	shader.setFloat("cascadeEnds[2]", transformCascadeEnds(-frustum.cascadeEnds[2]));
+	shader.setFloat("cascadeEnds[3]", transformCascadeEnds(-frustum.cascadeEnds[3]));
 	for (int i = 0; i < n; i++)
 	{
 
@@ -98,10 +98,11 @@ void CSM::firstPassFillShadowMaps(Terrain terrain, Shader shader, int VAO)
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO[i]);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_DEPTH_TEST);
+		glBindVertexArray(VAO);
 		glDrawArrays(GL_PATCHES, 0, terrain.getSize());
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
 
