@@ -192,7 +192,7 @@ int main()
 		//
 					// Lighting
 	//	dirLightPos.z -= sin(glfwGetTime()) * 5;
-		dirLightPos.y += sin(glfwGetTime()) * 5;
+		dirLightPos.y += sin(glfwGetTime()) * 10;
 
 
 		terrainShader.use();
@@ -218,7 +218,7 @@ int main()
 		{
 			// CSM
 			// Created FBO attachments, now take the first pass of the scene. Bind each framebuffer adn fill with depth values
-			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO);
+			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO, -dirLightPos);
 
 			//now render to screen
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);  // viewport for whole screen
@@ -259,12 +259,17 @@ int main()
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 
 		}
-
+		// testing different parts of terrain Z -> all in close / far shadow cascade :( 
+		glm::vec4 something = projection * view * glm::vec4(0,0,0,1);
+		glm::vec4 something2 = projection * view * glm::vec4(0,0,250,1);
+		glm::vec4 something3 = projection * view * glm::vec4(250,0,0,1);
+		glm::vec4 something4 = projection * view * glm::vec4(250,0,250,1);
 		
 		if (toggleBuffers)
 		{
-
-			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO);
+			terrainShader.setMat4("projection", projection);
+			terrainShader.setMat4("view", view);
+			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO, -dirLightPos);
 
 			// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
 
@@ -274,14 +279,14 @@ int main()
 			
 			for (int i = 0;i<3;i ++)
 			{			
-				int offset = i * 250;
+			int offset = i * 250;
 			glViewport(0 + offset, 600, 250, 250);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
 			postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
 			postProcessor.setFloat("nearPlane", nearPlane);
 			postProcessor.setFloat("farPlane", farPlane);
-			glActiveTexture(GL_TEXTURE0 + csm.getDepthMap()[i]);
+			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, csm.getDepthMap()[i]); // Bind Colour or Depth buffer
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			renderQuad(); // render our quad.

@@ -47,6 +47,7 @@ uniform sampler2D shadowMap[cascades];   // shadow map texture
 uniform mat4 lightSpaceMatrix[cascades];  // this is different - we're passing this to calculate shadow in frag shader
 uniform float cascadeEnds[cascades+1];
 
+vec3 colours[3] = vec3[3](vec3(0.3, 0.0, 0.0), vec3(0.0, 0.3, 0.0), vec3(0.0, 0.0, 0.3));
 
 int findAppropriateMap(float z, float ends[4]);
 
@@ -123,7 +124,7 @@ void main()
 	//FragColor = vec4(vec3(shadow),1.0) ;
 	}
 	
-	FragColor = vec4( blinnPhong ,1.0);
+	FragColor = vec4( blinnPhong ,1.0) + vec4(colours[map], 1.0);
 	
 	if(fogEnabled)
 		// Mix Fog visibility

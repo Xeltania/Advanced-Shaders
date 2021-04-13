@@ -15,7 +15,7 @@ public :
 	void setDepthFBO();
 	std::vector<unsigned int> getDepthMap() { return depthMap; }
 	std::vector<unsigned int> getDepthFBO() { return depthMapFBO; }
-	void firstPassFillShadowMaps(Terrain terrain, Shader shader, int VAO);
+	void firstPassFillShadowMaps(Terrain terrain, Shader shader, int VAO, glm::vec3 lightDir);
 	void updateFrustra(glm::mat4 view);
 	float transformCascadeEnds(float end);
 
@@ -29,5 +29,6 @@ private :
 	//
 	float FOV, aspectR, near, far;
 	glm::mat4 cameraProj;
+	glm::vec3 lightDir;
 
 };

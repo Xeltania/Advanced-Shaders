@@ -14,7 +14,7 @@ void Frustum::setValues(float FOV, float ar, float near, float far)
 
 void Frustum::setCascadeEnds(float a, float b, float c, float d) // Set partitions for each cascade 
 {
-		// will need to update this to allow for varying number of cascades //
+	// will need to update this to allow for varying number of cascades //
 	cascadeEnds[0] = a;
 	cascadeEnds[1] = b;
 	cascadeEnds[2] = c;
