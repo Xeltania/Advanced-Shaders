@@ -53,6 +53,7 @@ int findAppropriateMap(float z, float ends[4]);
 
 void main()
 {    
+	
 	int map = findAppropriateMap(clipSpaceZ, cascadeEnds);
 	//
 	vec4 FragPosLightSpace = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it

@@ -145,13 +145,13 @@ int main()
 	//
 
 
-	dirLightPos = glm::vec3(200.f, 500.f, 200.f);
+	dirLightPos = glm::vec3(250.f, 850.f, 250.f);
 	// 100 10 300
 	float shadowBias = 0.001f;
 
 	// CSM 
 	const int numCascades = 3;
-	float nearPlane = 1.f, farPlane = 1000.f;
+	float nearPlane = 0.1f, farPlane = 1000.f;
 	terrainShader.setInt("cascades", numCascades);
 	CSM csm(SHADOW_W, SHADOW_H, -dirLightPos, glm::radians(camera.Zoom),SCR_WIDTH/SCR_HEIGHT, nearPlane, farPlane, numCascades);
 	Render renderer;
@@ -191,8 +191,8 @@ int main()
 		terrainShader.setVec3("sky", glm::vec3(clearR, clearG, clearB));
 		//
 					// Lighting
-	//	dirLightPos.z -= sin(glfwGetTime()) * 5;
-		dirLightPos.y += sin(glfwGetTime()) * 10;
+		dirLightPos.z += sin(glfwGetTime()) * 10;
+		//dirLightPos.y += sin(glfwGetTime()) * 10;
 
 
 		terrainShader.use();

@@ -31,7 +31,7 @@ CSM::CSM(int w, int h, glm::vec3 direction, float fieldOfView, float ar, float n
 	//
 	setDepthFBO();
 	frustum.setLightDir(direction);
-	frustum.setCascadeEnds(nearPlane, farPlane / 10, farPlane / 4, farPlane);
+	frustum.setCascadeEnds(nearPlane, farPlane / 10, farPlane / 5, farPlane);
 	frustum.setValues(FOV, ar, 0, 0);
 
 }
