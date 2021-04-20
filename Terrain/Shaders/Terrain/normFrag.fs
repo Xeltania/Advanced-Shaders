@@ -20,8 +20,6 @@ uniform LightAttribs light;
 // Interface block
 in vec3 gWorldPos_FS_in; // FragPos
 in vec3 gNormals; // geo shader normals
-in vec2 TexCoordsTE; // Texture coordinates
-//in vec3 posES; // Fragment position
 in float fog ; // Fog Visibility
 //in vec4 FragPosLightSpace ;
 //
@@ -90,13 +88,12 @@ void main()
 	// 
 
 
-	
 	// Ambient
-	vec3 ambient = colour * light.ambient; //* vec3(texture(texture_diffuse1, TexCoordsTE));
+	vec3 ambient = colour * light.ambient;
 	
 	// Diffuse
 	float diff = max(0.0, dot(normal, lightDir));
-	vec3 diffuse = (diff *colour) * light.diffuse; //* vec3(texture(texture_diffuse1, TexCoordsTE));
+	vec3 diffuse = (diff *colour) * light.diffuse;
 	
 	// Light values for specular
 	
@@ -108,13 +105,12 @@ void main()
 	vec3 halfDir = normalize(lightDir + viewDir); // Blinn-Phong
 	
 	float spec = pow(max(0, dot(halfDir, viewDir)), 0.9);
-	vec3 specular = (spec *colour)* light.specular;// * vec3(texture(texture_specular1, TexCoordsTE));
+	vec3 specular = (spec *colour)* light.specular;
 	
 	// Regular FragCol
 	vec3 blinnPhong = (ambient + diffuse + specular);
 
-	
-	
+
 	if(shadows)
 	{
 
@@ -162,16 +158,12 @@ float calcShadow(vec4 fragPosLightSpace, float bias, int map)
 	shadow /= 9; // 3x3 kernel
 	if(projCoords.z > 1.0)
 		shadow = 0.0;
-	// check whether current frag pos is in shadow
-	//if(currentDepth > closestDepth)
-	//	shadow = 1;
-	
     return shadow;
 }
 
 int findAppropriateMap(float z, float ends[4])
 {
-	int map = 2; // Begin ith the largest map by default.
+	int map = 2; // Begin with the largest map by default.
 	for(int i = 0; i < cascades; i ++)
 	{
 		if (z <= ends[i+1])

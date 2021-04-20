@@ -13,8 +13,7 @@ vec3 interpolate3D(vec3 v0, vec3 v1, vec3 v2) ;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-// height map
-uniform sampler2D heightMap;
+// height
 uniform float scale;
 // Perlin Noise
 uniform int octaves;
@@ -30,9 +29,7 @@ out vec3 normES;
 out vec3 posES ;
 out vec2 TexCoordsTE;
 out float vis;
-// CSM
-//out float clipSpaceZ;
-//
+
 // Forward declare functions
 float noise(vec3 pos, int octaves);
 
@@ -45,18 +42,9 @@ void main()
 	
     // interpolate the normal and xyz position using the linear interpolation function
     // use 3D because they are in three dimensions; 2D also included for uv texture coordinates
-
-   //normES = interpolate3D(normTC[0], normTC[1], normTC[2]) ;
    
    posES = interpolate3D(posTC[0], posTC[1], posTC[2]) ;
    
-   TexCoordsTE = interpolate2D(TexCoordsTC[0], TexCoordsTC[1], TexCoordsTC[2]);
-   float height = (texture(heightMap, TexCoordsTE).r);
-   
-   // Old pos to pass to Frag Shader, now using noise.
-	//posES.y = height * scale;
-
-
 	// Calculate CDM
    
    	// Frag Pos
@@ -70,15 +58,6 @@ void main()
    float du = up - down;
    
    
-   //rightHeight = noise(right, octaves)
-   //
-   //float right = (textureOffset(heightMap, TexCoordsTE, ivec2(1,0)).r)* scale;
-   //float left = (textureOffset(heightMap, TexCoordsTE, ivec2(-1,0)).r)* scale;
-   //float up = (textureOffset(heightMap, TexCoordsTE, ivec2(0,1)).r)* scale;
-   //float down = (textureOffset(heightMap, TexCoordsTE, ivec2(0,-1)).r)* scale;
-   //float lr = left - right;
-   //float du = down - up;
-   
    // Frag Normals
    normES = normalize(vec3(lr, 2.0, du));
    
@@ -87,7 +66,6 @@ void main()
    
    // transform vertex to clip space  - NOTE: WE NEED TO DO IT HERE NOW and not in vertex shader
    gl_Position = projection * view * vec4(posES, 1.0);
-  // clipSpaceZ = gl_Position.z;
    
    	// Fog -> pass this to frag shader
 	float distFromCam = distance(camPos, posES);

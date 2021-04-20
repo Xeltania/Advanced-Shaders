@@ -71,8 +71,6 @@ float lastFrame = 0.0f;
 bool showNormals = false; // Bind to the 1 key
 bool shadeNormals = false; // Bind to Tab key
 	// 
-bool usePerlin = false; // Bind to 2 key : need to toggle between how cdm is calculated in TES
-bool useCDM = false; // Swap between the getNormal() and CDM calculated normals
 bool useFog = false;
 	// Colour / Depth Buffer
 bool toggleBuffers = false;
@@ -132,8 +130,8 @@ int main()
 	terrainVAO = terrain.getVAO();
 
 	// Clear Colour
-	const float clearR = 0.40f;
-	const float clearG = 0.40f;
+	const float clearR = 0.5f;
+	const float clearG = 0.60f;
 	const float clearB = 0.80f;
 
 	// Lighting 
@@ -164,6 +162,7 @@ int main()
 
 	while (!glfwWindowShouldClose(window))
 	{
+
 	
 		// set the textures for the CSM uniforms
 		renderer.setTextures(terrainShader);
@@ -244,7 +243,8 @@ int main()
 			//
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
 		}
-		else {
+		else 
+		{
 			// Terrain Drawing
 			terrainShader.use();
 			terrainShader.setMat4("projection", projection);
@@ -341,14 +341,10 @@ void processInput(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
 		showNormals = !showNormals; // Swap to normal debugging shader visible
 	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-		usePerlin = !usePerlin; // Swap to perlin/height mapped
-	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-		useCDM = !useCDM; // Swap to getNormal/CDM
-	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		useFog = !useFog; // Toggle Fog
-	if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
 		toggleBuffers = !toggleBuffers; // Toggle BUffers
-	if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) 
+	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) 
 		toggleShadowMapping = !toggleShadowMapping; // Toggle BUffers
 	
 
@@ -473,6 +469,7 @@ void setFBOColour()
 	glBindTexture(GL_TEXTURE_2D, textureColourBuffer);
 	// Parameters for sampling ( set to null because we aren't using an image - screen space which we fill with our scene )
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	//glTexImage2D(GL_TEXTURE_2D, 9, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); // Updated to use HDR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	// Bind colour buffer to FBO

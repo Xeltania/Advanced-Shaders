@@ -1,15 +1,15 @@
 ﻿  Source.cpp
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(172): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(197): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(171): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(196): warning C4244: '+=': conversion from 'double' to 'T', possible loss of data
           with
           [
               T=float
           ]
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(371): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(372): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(376): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(377): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(379): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(380): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(393): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(367): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(368): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(372): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(373): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(375): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(376): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(389): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   Terrain.vcxproj -> C:\Users\natal\Documents\GitHub\Advanced-Shaders\Terrain\Debug\Terrain.exe
