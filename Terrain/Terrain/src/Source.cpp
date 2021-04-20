@@ -194,7 +194,7 @@ int main()
 		//
 					// Lighting
 		//dirLightPos.z += sin(glfwGetTime()) * 10;
-		//dirLightPos.y += sin(glfwGetTime()) * 10;
+		dirLightPos.y += sin(glfwGetTime()) * 10;
 
 
 		terrainShader.use();

@@ -113,7 +113,8 @@ void main()
 	// Regular FragCol
 	vec3 blinnPhong = (ambient + diffuse + specular);
 
-
+	
+	
 	if(shadows)
 	{
 
@@ -125,7 +126,7 @@ void main()
 	//FragColor = vec4(vec3(shadow),1.0) ;
 	}
 	
-	FragColor = vec4( blinnPhong ,1.0) + vec4(colours[map], 1.0);
+	FragColor = vec4( blinnPhong ,1.0);// + vec4(colours[map], 1.0);
 	
 	if(fogEnabled)
 		// Mix Fog visibility
