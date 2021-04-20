@@ -61,7 +61,7 @@ void Frustum::findCorners(float near, float far) // Find corners of frustum / fu
 	float xf = far * tanHalfHFOV;
 	float yn = near * tanHalfVFOV;
 	float yf = far * tanHalfVFOV;
-		// Near Face
+	// Near Face
 	corners.push_back(glm::vec4(xn, yn, near, 1.0f));
 	corners.push_back(glm::vec4(-xn, yn, near, 1.0f));
 	corners.push_back(glm::vec4(xn, -yn, near, 1.0f));

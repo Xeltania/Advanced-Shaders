@@ -1,3 +1,10 @@
-﻿  Frustum.cpp
-c:\users\xeltania\documents\github\advanced-shaders\terrain\terrain\src\frustum.cpp(28): warning C4018: '<': signed/unsigned mismatch
-  Terrain.vcxproj -> C:\Users\Xeltania\Documents\GitHub\Advanced-Shaders\Terrain\Debug\Terrain.exe
+﻿  Source.cpp
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(172): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(371): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(372): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(376): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(377): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(379): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(380): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\natal\documents\github\advanced-shaders\terrain\terrain\src\source.cpp(393): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  Terrain.vcxproj -> C:\Users\natal\Documents\GitHub\Advanced-Shaders\Terrain\Debug\Terrain.exe

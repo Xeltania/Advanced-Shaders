@@ -145,7 +145,7 @@ int main()
 	//
 
 
-	dirLightPos = glm::vec3(250.f, 850.f, 250.f);
+	dirLightPos = glm::vec3(250.f, 250.f, 250.f);
 	// 100 10 300
 	float shadowBias = 0.001f;
 
@@ -153,7 +153,8 @@ int main()
 	const int numCascades = 3;
 	float nearPlane = 0.1f, farPlane = 1000.f;
 	terrainShader.setInt("cascades", numCascades);
-	CSM csm(SHADOW_W, SHADOW_H, -dirLightPos, glm::radians(camera.Zoom),SCR_WIDTH/SCR_HEIGHT, nearPlane, farPlane, numCascades);
+	glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
+	CSM csm(SHADOW_W, SHADOW_H, -dirLightPos, glm::radians(camera.Zoom),SCR_WIDTH/SCR_HEIGHT, nearPlane, farPlane, numCascades, projection);
 	Render renderer;
 
 	terrainShader.use();
@@ -178,10 +179,11 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glClearColor(clearR, clearG, clearB, 1.0f);
 		//
-		
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
+	
 		glm::mat4 view = camera.GetViewMatrix();
 		csm.updateFrustra(view);
+		projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
+		csm.updateProjection(projection);
 
 		glm::mat4 model = glm::mat4(1.0f);
 
@@ -191,7 +193,7 @@ int main()
 		terrainShader.setVec3("sky", glm::vec3(clearR, clearG, clearB));
 		//
 					// Lighting
-		dirLightPos.z += sin(glfwGetTime()) * 10;
+		//dirLightPos.z += sin(glfwGetTime()) * 10;
 		//dirLightPos.y += sin(glfwGetTime()) * 10;
 
 
@@ -261,9 +263,6 @@ int main()
 		}
 		// testing different parts of terrain Z -> all in close / far shadow cascade :( 
 		glm::vec4 something = projection * view * glm::vec4(0,0,0,1);
-		glm::vec4 something2 = projection * view * glm::vec4(0,0,250,1);
-		glm::vec4 something3 = projection * view * glm::vec4(250,0,0,1);
-		glm::vec4 something4 = projection * view * glm::vec4(250,0,250,1);
 		
 		if (toggleBuffers)
 		{
@@ -277,7 +276,7 @@ int main()
 		//	glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
 			//
 			
-			for (int i = 0;i<3;i ++)
+			for (int i = 0;i <3; i ++)
 			{			
 			int offset = i * 250;
 			glViewport(0 + offset, 600, 250, 250);
@@ -286,6 +285,7 @@ int main()
 			postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
 			postProcessor.setFloat("nearPlane", nearPlane);
 			postProcessor.setFloat("farPlane", farPlane);
+			postProcessor.setFloat("bias", shadowBias);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, csm.getDepthMap()[i]); // Bind Colour or Depth buffer
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -350,7 +350,6 @@ void processInput(GLFWwindow *window)
 		toggleBuffers = !toggleBuffers; // Toggle BUffers
 	if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS) 
 		toggleShadowMapping = !toggleShadowMapping; // Toggle BUffers
-		if(toggleShadowMapping)std::cout << "Toggled Shadows" << std::endl;
 	
 
 

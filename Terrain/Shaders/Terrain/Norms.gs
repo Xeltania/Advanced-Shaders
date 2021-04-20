@@ -14,7 +14,7 @@ out float fog ;
 uniform mat4 view;
 uniform mat4 projection;
 
-
+out float clipSpaceZ;
 void main()
 {
   
@@ -23,6 +23,7 @@ void main()
    for(int i = 0 ; i < 3; i++)
    {
       gl_Position = projection * view * vec4(posES[i], 1.0) ;
+	  clipSpaceZ = gl_Position.z;
       gWorldPos_FS_in = posES[i];
       gNormals = normES[i];    
       EmitVertex() ;

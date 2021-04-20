@@ -17,7 +17,7 @@ CSM::CSM( unsigned int shadowWidth, unsigned int shadowHeight, unsigned int *dep
 
 }
 
-CSM::CSM(int w, int h, glm::vec3 direction, float fieldOfView, float ar, float nearPlane, float farPlane, int cascades)
+CSM::CSM(int w, int h, glm::vec3 direction, float fieldOfView, float ar, float nearPlane, float farPlane, int cascades, glm::mat4 proj)
 {
 	n = cascades;
 	shadowW = w;
@@ -28,10 +28,11 @@ CSM::CSM(int w, int h, glm::vec3 direction, float fieldOfView, float ar, float n
 	aspectR = ar;
 	near = nearPlane;
 	far = farPlane;
+	cameraProj = proj;
 	//
 	setDepthFBO();
 	frustum.setLightDir(direction);
-	frustum.setCascadeEnds(nearPlane, farPlane / 10, farPlane / 5, farPlane);
+	frustum.setCascadeEnds(-nearPlane, -farPlane / 20, -farPlane / 5, -farPlane);
 	frustum.setValues(FOV, ar, 0, 0);
 
 }

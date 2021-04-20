@@ -18,10 +18,10 @@ uniform LightAttribs light;
 
 
 // Interface block
-in vec3 gWorldPos_FS_in; // Normal
+in vec3 gWorldPos_FS_in; // FragPos
 in vec3 gNormals; // geo shader normals
 in vec2 TexCoordsTE; // Texture coordinates
-in vec3 posES; // Fragment position
+//in vec3 posES; // Fragment position
 in float fog ; // Fog Visibility
 //in vec4 FragPosLightSpace ;
 //
@@ -56,7 +56,7 @@ void main()
 	
 	int map = findAppropriateMap(clipSpaceZ, cascadeEnds);
 	//
-	vec4 FragPosLightSpace = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as ight sees it
+	vec4 FragPosLightSpace = lightSpaceMatrix[map] * vec4(gWorldPos_FS_in, 1.0);  // point as light sees it
 	//
 	float height = gWorldPos_FS_in.y / scale;
 	vec4 green = vec4(0.3, 0.35, 0.15, 0.0);
@@ -134,7 +134,7 @@ void main()
 }
 
 
-float calcShadow(vec4 fragPosLightSpace, float bias, int map)  //incomplete
+float calcShadow(vec4 fragPosLightSpace, float bias, int map)
 {
     float shadow = 0.0 ; 
     // perform perspective divide values in range [-1,1]
