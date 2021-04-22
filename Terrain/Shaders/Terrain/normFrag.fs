@@ -127,6 +127,11 @@ void main()
 	if(fogEnabled)
 		// Mix Fog visibility
 		FragColor = mix(vec4(sky, 1.0), FragColor, fog);
+	
+	//
+		float intensity;
+	vec4 color;
+	intensity = dot(lightDir,normal);
 
 }
 

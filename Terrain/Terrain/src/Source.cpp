@@ -46,6 +46,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(char const * path);
+void updateTerrain();
 //unsigned int loadTexture2(char const * path);
 //
 void setVAO(vector <float> vertices);
@@ -73,10 +74,20 @@ bool shadeNormals = false; // Bind to Tab key
 	// 
 bool useFog = false;
 	// Colour / Depth Buffer
-bool toggleBuffers = false;
+bool toggleDepth = false;
+bool toggleHDR = false;
 bool toggleShadowMapping = false;
+bool toggleInvert = false;
+bool pixelation = false;
 
+bool moveTerrain = false;
+//
+glm::mat4 model = glm::mat4(1.0f);
 
+//
+float exposure = 1.0f; // Passed into HDR to change exposure level in runtime
+float pixels = 512.0f;
+//
 
 int main()
 {
@@ -115,8 +126,6 @@ int main()
 	Shader drawNormal("..\\shaders\\Normals\\plainVert.vs", "..\\shaders\\Normals\\plainFrag.fs", "..\\shaders\\Normals\\normalGeometry.gs", "..\\shaders\\Normals\\tessControlShader.tcs", "..\\shaders\\Normals\\tessEvaluationShader.tes");
 	// Post Processing
 	Shader postProcessor("..\\shaders\\Post Processing\\plainVert.vs", "..\\shaders\\Post Processing\\plainFrag.fs", 0, 0, 0);
-	Shader depthShader("..\\shaders\\Post Processing\\depthVert.vs", "..\\shaders\\Post Processing\\depthFrag.fs", 0, 0, 0);
-	//Shader shadowShader("..\\shaders\\Post Processing\\shadowVert.vs", "..\\shaders\\Terrain\\normFrag.fs", "..\\shaders\\Terrain\\Norms.gs", "..\\shaders\\Terrain\\tessControlShader.tcs", "..\\shaders\\Terrain\\tessEvaluationShader.tes"); // seperate shader for shadow mapping?
 	//
 
 	//Load HeightMap Texture
@@ -130,20 +139,21 @@ int main()
 	terrainVAO = terrain.getVAO();
 
 	// Clear Colour
-	const float clearR = 0.5f;
-	const float clearG = 0.60f;
-	const float clearB = 0.80f;
+	float clearR = 0.5f;
+	float clearG = 0.60f;
+	float clearB = 0.80f;
 
 	// Lighting 
 	GLint lightPos, ambient, diffuse, specular;
 
 	// Frame Buffers
 	//setFBOColour();
-	setFBODepth();
+	//setFBODepth();
+	setFBOColour();
 	//
+	float timestep=0;
 
-
-	dirLightPos = glm::vec3(250.f, 250.f, 250.f);
+	dirLightPos = glm::vec3(250.f, 0.f, 250.f);
 	// 100 10 300
 	float shadowBias = 0.001f;
 
@@ -163,11 +173,27 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 
-	
+		updateTerrain();
+
 		// set the textures for the CSM uniforms
 		renderer.setTextures(terrainShader);
 		//
 
+		timestep += glfwGetTime();
+		if ( glfwGetTime() / timestep < timestep) {
+			clearR -= 0.01f;
+			clearG -= 0.01f;
+			clearB -= 0.01f;
+		}
+		else
+		{
+			clearR += 0.01f;
+			clearG += 0.01f;
+			clearB += 0.01f;
+
+			
+		}
+		timestep = 0;
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -184,8 +210,6 @@ int main()
 		projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, nearPlane, farPlane);
 		csm.updateProjection(projection);
 
-		glm::mat4 model = glm::mat4(1.0f);
-
 		glm::vec3 targetPos(260, 100, 900);
 
 		// Fog
@@ -196,6 +220,14 @@ int main()
 		dirLightPos.y += sin(glfwGetTime()) * 10;
 
 
+		postProcessor.use();
+		postProcessor.setBool("depth", toggleDepth);
+		postProcessor.setBool("hdr", toggleHDR);
+		postProcessor.setBool("inverted", toggleInvert);
+		postProcessor.setBool("pixelation", pixelation);
+		postProcessor.setFloat("exposure", exposure);
+		postProcessor.setFloat("pixels", pixels);
+		//
 		terrainShader.use();
 		terrainShader.setFloat("bias", shadowBias);
 		terrainShader.setMat4("model", model);
@@ -222,12 +254,13 @@ int main()
 			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO, -dirLightPos);
 
 			//now render to screen
+			glBindFramebuffer(GL_FRAMEBUFFER, colourFBO);
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);  // viewport for whole screen
 			terrainShader.use();
 			terrainShader.setMat4("projection", projection);
 			terrainShader.setMat4("view", view);
 			//
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 			glEnable(GL_DEPTH_TEST);
 			glClearColor(clearR, clearG, clearB, 1.0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -242,40 +275,47 @@ int main()
 			glBindTexture(GL_TEXTURE_2D, csm.getDepthMap()[2]);
 			//
 			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
+
+			//
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glDisable(GL_DEPTH_TEST);
+			postProcessor.use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, textureColourBuffer);
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			renderQuad();
 		}
 		else 
 		{
+			
 			// Terrain Drawing
 			terrainShader.use();
 			terrainShader.setMat4("projection", projection);
 			terrainShader.setMat4("view", view);
+			glEnable(GL_DEPTH_TEST);
 			//Main Viewport
 			glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
-
 			glBindVertexArray(terrainVAO);
 
 			if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 			else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
+
 			//
 
-			glDrawArrays(GL_PATCHES, 0, terrain.getSize());
+
 
 		}
 		// testing different parts of terrain Z -> all in close / far shadow cascade :( 
-		glm::vec4 something = projection * view * glm::vec4(0,0,0,1);
 		
-		if (toggleBuffers)
+		if (toggleDepth)
 		{
 			terrainShader.setMat4("projection", projection);
 			terrainShader.setMat4("view", view);
 			csm.firstPassFillShadowMaps(terrain, terrainShader, terrainVAO, -dirLightPos);
 
-			// renderScene(terrainShader, modelShader, tree); // Use this to render a scene with trees in it.
-
-			// Second pass to render to screen
-		//	glViewport(900, 500, SCR_WIDTH, SCR_HEIGHT); // Draw depth attachment to this window
 			//
-			
 			for (int i = 0;i <3; i ++)
 			{			
 			int offset = i * 250;
@@ -283,9 +323,6 @@ int main()
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glDisable(GL_DEPTH_TEST); // Disable depth test : only rendering a 2D image.
 			postProcessor.use(); // Use the post-processing shader (all post processing effects will go in here)
-			postProcessor.setFloat("nearPlane", nearPlane);
-			postProcessor.setFloat("farPlane", farPlane);
-			postProcessor.setFloat("bias", shadowBias);
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, csm.getDepthMap()[i]); // Bind Colour or Depth buffer
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -322,6 +359,14 @@ int main()
 	return 0;
 }
 
+void updateTerrain()
+{
+
+	model = glm::translate(glm::mat4(1.f), glm::vec3((camera.Position.x - 250.f), 0.0f, (camera.Position.z - 250.f)));
+
+	
+	moveTerrain = true;
+}
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
@@ -342,10 +387,24 @@ void processInput(GLFWwindow *window)
 		showNormals = !showNormals; // Swap to normal debugging shader visible
 	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 		useFog = !useFog; // Toggle Fog
-	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-		toggleBuffers = !toggleBuffers; // Toggle BUffers
-	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) 
+	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) 
 		toggleShadowMapping = !toggleShadowMapping; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		toggleDepth = !toggleDepth; // Toggle Depth Buffer
+	if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+		toggleHDR = !toggleHDR; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+		toggleInvert = !toggleInvert; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
+		pixelation = !pixelation; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		exposure += 0.25f; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		exposure -= 0.25f; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		pixels -= 125.f; // Toggle BUffers
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		pixels += 125.f; // Toggle BUffers
 	
 
 
@@ -377,9 +436,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 	camera.ProcessMouseMovement(xoffset, yoffset);
 }
-
-
-
 
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
@@ -459,8 +515,6 @@ void setVAO(vector<float> vertices)
 void setFBOColour()
 {
 
-	
-
 	// Create & bind FBO
 	glGenFramebuffers(1, &colourFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, colourFBO);
@@ -469,7 +523,7 @@ void setFBOColour()
 	glBindTexture(GL_TEXTURE_2D, textureColourBuffer);
 	// Parameters for sampling ( set to null because we aren't using an image - screen space which we fill with our scene )
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	//glTexImage2D(GL_TEXTURE_2D, 9, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); // Updated to use HDR
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); // Updated to use HDR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	// Bind colour buffer to FBO
