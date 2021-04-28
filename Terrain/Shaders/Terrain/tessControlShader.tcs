@@ -25,11 +25,10 @@ float GetTessLevel(float dist0, float dist1)
 {
 
 	float averageDist = (dist0 + dist1) / 2.0;
-	
+			// heuristic
 	/*
-	// heuristic
+	// stepped distances
 	
-		// stepped distances
 	if(averageDist < 50)
 		return 15;
 	else if (averageDist < 100)
@@ -40,7 +39,9 @@ float GetTessLevel(float dist0, float dist1)
 		return 1 ;
 	*/
 	
+	
 	// exponential 
+	
 	float tessLv = (exp(- 0.01 * averageDist)) * 100;
 
 	if (tessLv > 1)

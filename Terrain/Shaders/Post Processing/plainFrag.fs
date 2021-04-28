@@ -26,25 +26,33 @@ void main()
 {
 
 	FragColor = texture(scene, TexCoords) ;
+	// Pixel effect
 	if(pixelation)
 	{
+		// Set the resolutions based on uniform 
 		float dx = 15.0 * (1/pixels);
 		float dy = 10.0 * (1/pixels);
+		// Calculate new texCoords based on resolution
 		vec2 newCoord = vec2(dx * floor(TexCoords.x / dx),
 							dy * floor(TexCoords.y / dy));
+		// Output new resolution
 		FragColor = texture(scene, newCoord);
 	}
+	// Inverted colour
 	if(inverted)
 	{
+		// invert texcoord RGB values
 		vec4 colour = vec4(vec3(1.0 - texture(scene, TexCoords)), 1.0);
 		FragColor = colour;
 	}
+	// High Dynamic Range Lighting
 	if(hdr)
 	{
+		// Gamma value (could pass as uniform to alter this in source
 		const float gamma = 2.5;
+		//hdrColor = RGB of scene texcoords;
 		vec3 hdrColor = texture(scene, TexCoords).rgb;
-		hdrColor = texture(scene, TexCoords).rgb;
-  
+		
 		// reinhard tone mapping
 		vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
 		// gamma correction 
@@ -52,9 +60,11 @@ void main()
   
 		FragColor = vec4(mapped, 1.0);
 	}
+	// Depth buffer
 	if(depth)
 	{
 		float depth = texture(scene, TexCoords).r;
+		// Calculate depth
 		FragColor = vec4(vec3(linearizeDepth(depth) / farPlane), 1.0);
 		FragColor = vec4(vec3(depth),1.0);
 	}

@@ -147,13 +147,14 @@ int main()
 	GLint lightPos, ambient, diffuse, specular;
 
 	// Frame Buffers
-	//setFBOColour();
+
 	//setFBODepth();
 	setFBOColour();
+
 	//
 	float timestep=0;
 
-	dirLightPos = glm::vec3(250.f, 0.f, 250.f);
+	dirLightPos = glm::vec3(100.f, 250.f, 100.f);
 	// 100 10 300
 	float shadowBias = 0.001f;
 
@@ -178,9 +179,9 @@ int main()
 		// set the textures for the CSM uniforms
 		renderer.setTextures(terrainShader);
 		//
-
-		timestep += glfwGetTime();
-		if ( glfwGetTime() / timestep < timestep) {
+		/*
+		timestep = (timestep / 2);
+		if ( timestep > 2) {
 			clearR -= 0.01f;
 			clearG -= 0.01f;
 			clearB -= 0.01f;
@@ -192,8 +193,10 @@ int main()
 			clearB += 0.01f;
 
 			
-		}
-		timestep = 0;
+		}*/
+
+		timestep = glfwGetTime();
+
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -217,9 +220,9 @@ int main()
 		//
 					// Lighting
 		//dirLightPos.z += sin(glfwGetTime()) * 10;
-		dirLightPos.y += sin(glfwGetTime()) * 10;
+		dirLightPos.y += sin(glfwGetTime()) * 5;
 
-
+		// Setup shader defaults
 		postProcessor.use();
 		postProcessor.setBool("depth", toggleDepth);
 		postProcessor.setBool("hdr", toggleHDR);
@@ -522,7 +525,7 @@ void setFBOColour()
 	glGenTextures(1, &textureColourBuffer);
 	glBindTexture(GL_TEXTURE_2D, textureColourBuffer);
 	// Parameters for sampling ( set to null because we aren't using an image - screen space which we fill with our scene )
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
 	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL); // Updated to use HDR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
